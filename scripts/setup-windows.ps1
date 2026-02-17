@@ -7,7 +7,12 @@ param(
     [switch]$SkipScoop,
     [switch]$SkipModules,
     [switch]$SkipSymlinks,
-    [switch]$Force
+    [switch]$Force,
+    [switch]$IncludeFonts,
+    [switch]$IncludeGUI,
+    [switch]$IncludeOptionalEssentials,
+    [switch]$IncludeWorkTools,
+    [switch]$NoPrompt
 )
 
 $ErrorActionPreference = "Stop"
@@ -58,24 +63,82 @@ if (-not $SkipScoop) {
             }
         }
         
-        Write-Host ""
-        Write-Host "Installing apps..." -ForegroundColor Cyan
-        foreach ($app in $ScoopConfig.apps) {
-            $appName = $app.name
-            Write-Host "  Checking $appName..." -NoNewline
+        # Prompt for optional app groups if not specified
+        if (-not $NoPrompt) {
+            Write-Host ""
+            Write-Host "Optional app groups:" -ForegroundColor Cyan
             
-            $installed = scoop list $appName 2>&1 | Select-String -Pattern $appName -Quiet
-            if ($installed -and -not $Force) {
-                Write-Host " already installed" -ForegroundColor Green
-            } else {
-                try {
-                    Write-Host ""
-                    scoop install $appName
-                    Write-Host "  ✓ Installed $appName" -ForegroundColor Green
-                } catch {
-                    Write-Host "  ✗ Failed to install $appName" -ForegroundColor Red
+            if (-not $IncludeFonts -and $ScoopConfig.fonts.Count -gt 0) {
+                $response = Read-Host "Install fonts? (y/N)"
+                $IncludeFonts = $response -eq 'y' -or $response -eq 'Y'
+            }
+            
+            if (-not $IncludeGUI -and $ScoopConfig.'gui-apps'.Count -gt 0) {
+                $response = Read-Host "Install GUI apps (vscode, zed, obsidian)? (y/N)"
+                $IncludeGUI = $response -eq 'y' -or $response -eq 'Y'
+            }
+            
+            if (-not $IncludeOptionalEssentials -and $ScoopConfig.optional_essentials.Count -gt 0) {
+                $response = Read-Host "Install optional essentials? (y/N)"
+                $IncludeOptionalEssentials = $response -eq 'y' -or $response -eq 'Y'
+            }
+            
+            if (-not $IncludeWorkTools -and $ScoopConfig.optional_work_tools.Count -gt 0) {
+                $response = Read-Host "Install work tools (nswagstudio, mongodb-compass, etc.)? (y/N)"
+                $IncludeWorkTools = $response -eq 'y' -or $response -eq 'Y'
+            }
+        }
+        
+        # Function to install apps from a group
+        function Install-AppGroup {
+            param(
+                [string]$GroupName,
+                [array]$Apps
+            )
+            
+            if ($Apps.Count -eq 0) {
+                return
+            }
+            
+            Write-Host ""
+            Write-Host "Installing $GroupName..." -ForegroundColor Cyan
+            foreach ($app in $Apps) {
+                $appName = $app.name
+                Write-Host "  Checking $appName..." -NoNewline
+                
+                $installed = scoop list $appName 2>&1 | Select-String -Pattern $appName -Quiet
+                if ($installed -and -not $Force) {
+                    Write-Host " already installed" -ForegroundColor Green
+                } else {
+                    try {
+                        Write-Host ""
+                        scoop install $appName
+                        Write-Host "  ✓ Installed $appName" -ForegroundColor Green
+                    } catch {
+                        Write-Host "  ✗ Failed to install $appName" -ForegroundColor Red
+                    }
                 }
             }
+        }
+        
+        # Install core apps
+        Install-AppGroup "core apps" $ScoopConfig.apps
+        
+        # Install optional groups based on user selection
+        if ($IncludeFonts) {
+            Install-AppGroup "fonts" $ScoopConfig.fonts
+        }
+        
+        if ($IncludeGUI) {
+            Install-AppGroup "GUI apps" $ScoopConfig.'gui-apps'
+        }
+        
+        if ($IncludeOptionalEssentials) {
+            Install-AppGroup "optional essentials" $ScoopConfig.optional_essentials
+        }
+        
+        if ($IncludeWorkTools) {
+            Install-AppGroup "work tools" $ScoopConfig.optional_work_tools
         }
     } else {
         Write-Host "Scoopfile not found at $ScoopFile" -ForegroundColor Red

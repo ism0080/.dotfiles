@@ -5,7 +5,8 @@
   "buckets": [
     "main",
     "extras",
-    "java"
+    "java",
+    "nerd-fonts"
   ],
   "apps": [
     {
@@ -122,6 +123,13 @@
       "name": "starship",
       "source": "main",
       "comment": "Modern shell prompt (or install from starship.rs)"
+    }
+  ],
+  "fonts": [
+    {
+      "name": "cascadia-code",
+      "source": "nerd-fonts",
+      "comment": "Monospaced font with programming ligatures"
     }
   ],
   "gui-apps": [
