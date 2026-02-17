@@ -134,6 +134,23 @@ install_scoop_windows() {
     return 0
 }
 
+install_bun() {
+    print_step "Installing Bun"
+    
+    if command_exists bun; then
+        print_success "Bun is already installed"
+        return 0
+    fi
+    
+    print_info "Installing Bun..."
+    if curl -fsSL https://bun.sh/install | bash; then
+        print_success "Bun installed successfully"
+    else
+        print_error "Failed to install Bun"
+        return 1
+    fi
+}
+
 install_packages_wsl() {
     print_step "Installing packages from Brewfile (WSL)"
     
@@ -276,11 +293,12 @@ cmd_init() {
     print_info "Environment: ${ENVIRONMENT}"
     
     if [[ "$ENVIRONMENT" == "wsl" ]]; then
-        TOTAL_STEPS=5
+        TOTAL_STEPS=6
         CURRENT_STEP=0
         
         install_homebrew_wsl || return 1
         install_packages_wsl || return 1
+        install_bun || print_warning "Bun installation failed (continuing)"
         symlink_configs || return 1
         setup_zsh_shell || print_warning "Zsh setup failed (continuing)"
         
