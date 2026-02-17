@@ -413,41 +413,122 @@ cmd_doctor() {
         # Check Homebrew
         if command_exists brew; then
             print_success "Homebrew installed"
+            print_info "  Version: $(brew --version | head -n1)"
         else
             print_error "Homebrew not installed"
             ((++issues))
         fi
-    fi
-    
-    # Check Stow
-    if command_exists stow; then
-        print_success "GNU Stow installed"
-    else
-        print_error "GNU Stow not installed (required)"
-        ((++issues))
-    fi
-    
-    # Check key tools
-    local tools=("git" "nvim" "tmux" "zsh")
-    for tool in "${tools[@]}"; do
-        if command_exists "$tool"; then
-            print_success "$tool is available"
+        
+        # Check Stow
+        if command_exists stow; then
+            print_success "GNU Stow installed"
         else
-            print_warning "$tool not installed"
+            print_error "GNU Stow not installed (required for symlinks)"
+            ((++issues))
         fi
-    done
-    
-    # Check config files
-    if [[ -f "${HOME}/.config/git/config" ]] || [[ -L "${HOME}/.config/git/config" ]]; then
-        print_success "Git config linked"
-    else
-        print_warning "Git config not linked"
+        
+        # Check key tools for WSL
+        local tools=("git" "nvim" "tmux" "zsh" "mise")
+        for tool in "${tools[@]}"; do
+            if command_exists "$tool"; then
+                print_success "$tool is available"
+            else
+                print_warning "$tool not installed"
+            fi
+        done
+        
+        # Check config files
+        if [[ -f "${HOME}/.config/git/config" ]] || [[ -L "${HOME}/.config/git/config" ]]; then
+            print_success "Git config linked"
+        else
+            print_warning "Git config not linked (run 'dot stow')"
+        fi
+        
+        # Check if zsh is default shell
+        if [[ "$SHELL" == *"zsh"* ]]; then
+            print_success "Zsh is default shell"
+        else
+            print_warning "Zsh is not default shell"
+        fi
+        
+    elif [[ "$ENVIRONMENT" == "windows" ]]; then
+        # Check Scoop
+        if command_exists scoop; then
+            print_success "Scoop installed"
+            print_info "  Version: $(powershell.exe -Command "scoop --version" 2>/dev/null | tr -d '\r')"
+        else
+            print_error "Scoop not installed"
+            print_info "  Install: irm get.scoop.sh | iex (in PowerShell)"
+            ((++issues))
+        fi
+        
+        # Check key tools for Windows
+        local tools=("git" "nvim" "mise")
+        for tool in "${tools[@]}"; do
+            if command_exists "$tool" || command_exists "${tool}.exe"; then
+                print_success "$tool is available"
+            else
+                print_warning "$tool not installed (install via Scoop)"
+            fi
+        done
+        
+        # Check PowerShell modules
+        print_info "Checking PowerShell modules..."
+        local modules=("PSReadLine" "PSFzf" "posh-git" "Terminal-Icons")
+        for module in "${modules[@]}"; do
+            if powershell.exe -Command "Get-Module -ListAvailable -Name $module" 2>/dev/null | grep -q "$module"; then
+                print_success "$module module installed"
+            else
+                print_warning "$module module not installed"
+            fi
+        done
+        
+        # Check if running from WSL can access Windows home
+        if [[ -n "$WSLENV" ]]; then
+            local win_home
+            win_home=$(cmd.exe /c "echo %USERPROFILE%" 2>/dev/null | tr -d '\r')
+            if [[ -n "$win_home" ]]; then
+                print_success "WSL can access Windows home"
+                print_info "  Windows home: $win_home"
+            else
+                print_warning "Cannot determine Windows home directory"
+            fi
+        fi
+        
+        # Check symlinks (if running from WSL)
+        if [[ -n "$WSLENV" ]]; then
+            print_info "Note: Run 'dot doctor' from WSL to check symlink status"
+        fi
     fi
     
+    # Cross-platform checks
+    print_info "Checking mise installations..."
+    if command_exists mise; then
+        print_success "mise is available"
+        print_info "  Version: $(mise --version 2>/dev/null)"
+        
+        # Check installed runtimes
+        local runtimes
+        runtimes=$(mise list 2>/dev/null)
+        if [[ -n "$runtimes" ]]; then
+            print_info "  Installed runtimes:"
+            echo "$runtimes" | while read -r line; do
+                [[ -n "$line" ]] && print_info "    $line"
+            done
+        else
+            print_info "  No runtimes installed yet (use 'mise install')"
+        fi
+    else
+        print_warning "mise not installed"
+    fi
+    
+    # Summary
+    echo ""
     if [[ $issues -eq 0 ]]; then
         print_header "All critical checks passed! ✨"
     else
         print_header "Found $issues critical issues"
+        print_info "Run 'dot init' (WSL) or 'dot init-windows' (PowerShell) to fix"
     fi
 }
 
