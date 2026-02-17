@@ -286,7 +286,9 @@ cmd_init() {
         
         print_header "WSL setup complete! 🎉"
         print_info "Next steps:"
-        print_info "1. Run 'dot init-windows' from PowerShell to setup Windows side"
+        print_info "1. Edit home/.config/git/config with your email and name"
+        print_info "2. Install runtimes with mise (e.g., 'mise use -g bun@latest')"
+        print_info "3. Run './dot init-windows' from PowerShell to setup Windows side"
         
     elif [[ "$ENVIRONMENT" == "windows" ]]; then
         print_warning "Running from Windows Git Bash"
@@ -301,13 +303,43 @@ cmd_init() {
 cmd_init_windows() {
     print_header "Initializing Windows-side configuration"
     
-    print_info "Windows setup requires:"
-    print_info "1. Install Scoop: irm get.scoop.sh | iex (in PowerShell)"
-    print_info "2. Install packages: scoop install git neovim"
-    print_info "3. Create config symlinks (see README)"
-    
-    print_warning "This script is designed to run in WSL"
-    print_info "Please follow the manual steps in README.md for Windows setup"
+    # Check if running in PowerShell
+    if [[ -n "$PSVersionTable" ]] || command -v pwsh >/dev/null 2>&1 || command -v powershell.exe >/dev/null 2>&1; then
+        print_info "Detected PowerShell environment"
+        
+        # Check if Scoop is installed
+        if ! command_exists scoop; then
+            print_warning "Scoop is not installed"
+            print_info "Install Scoop first: irm get.scoop.sh | iex"
+            return 1
+        fi
+        
+        # Run the Windows setup script
+        print_info "Running Windows setup script..."
+        local setup_script="${SCRIPTS_DIR}/setup-windows.ps1"
+        
+        if [[ ! -f "$setup_script" ]]; then
+            print_error "Setup script not found: $setup_script"
+            return 1
+        fi
+        
+        if powershell.exe -ExecutionPolicy Bypass -File "$setup_script"; then
+            print_header "Windows setup complete! 🎉"
+            print_info "Packages, modules, and symlinks have been configured"
+        else
+            print_error "Windows setup failed"
+            return 1
+        fi
+    else
+        print_warning "This command should be run from PowerShell"
+        print_info "Run from PowerShell:"
+        print_info "  cd ${DOTFILES_DIR}"
+        print_info "  .\\scripts\\setup-windows.ps1"
+        print_info ""
+        print_info "Or if Scoop is not installed yet:"
+        print_info "  1. Install Scoop: irm get.scoop.sh | iex"
+        print_info "  2. Run: .\\scripts\\setup-windows.ps1"
+    fi
 }
 
 cmd_update() {
