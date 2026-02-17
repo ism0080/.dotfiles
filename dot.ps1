@@ -1,0 +1,332 @@
+#!/usr/bin/env pwsh
+<#
+.SYNOPSIS
+    PowerShell wrapper for the dot command - Dotfiles management for WSL/Windows
+
+.DESCRIPTION
+    This PowerShell script wraps the bash-based dot script, making it easy to run
+    dotfiles management commands from PowerShell on Windows.
+
+.PARAMETER Command
+    The dot command to run (init, init-windows, update, doctor, stow, help)
+
+.PARAMETER Arguments
+    Additional arguments to pass to the command
+
+.EXAMPLE
+    .\dot.ps1 doctor
+    Run diagnostics on your dotfiles setup
+
+.EXAMPLE
+    .\dot.ps1 init-windows
+    Initialize Windows-side configuration
+
+.EXAMPLE
+    .\dot.ps1 update
+    Update dotfiles and packages
+
+.NOTES
+    For best results with WSL commands, ensure Git Bash or WSL is installed
+#>
+
+[CmdletBinding()]
+param(
+    [Parameter(Position = 0)]
+    [string]$Command = "help",
+    
+    [Parameter(Position = 1, ValueFromRemainingArguments = $true)]
+    [string[]]$Arguments
+)
+
+$ErrorActionPreference = "Stop"
+
+# Get the script directory
+$DotfilesDir = $PSScriptRoot
+
+# Colors for output
+function Write-ColorOutput {
+    param(
+        [string]$Message,
+        [string]$Color = "White"
+    )
+    Write-Host $Message -ForegroundColor $Color
+}
+
+function Write-Success {
+    param([string]$Message)
+    Write-ColorOutput "✓ $Message" -Color Green
+}
+
+function Write-Error-Custom {
+    param([string]$Message)
+    Write-ColorOutput "✗ $Message" -Color Red
+}
+
+function Write-Warning-Custom {
+    param([string]$Message)
+    Write-ColorOutput "⚠ $Message" -Color Yellow
+}
+
+function Write-Info {
+    param([string]$Message)
+    Write-ColorOutput "ℹ $Message" -Color Cyan
+}
+
+function Write-Header {
+    param([string]$Message)
+    Write-Host ""
+    Write-ColorOutput "==> $Message" -Color Blue
+}
+
+# Main execution
+Write-Header "Dotfiles Management (PowerShell Wrapper)"
+
+# Check if we're on Windows
+if (-not $IsWindows -and -not $env:OS -match "Windows") {
+    Write-Error-Custom "This PowerShell wrapper is designed for Windows"
+    Write-Info "Run './dot $Command' directly from bash instead"
+    exit 1
+}
+
+# Handle different commands
+switch ($Command.ToLower()) {
+    "init-windows" {
+        Write-Header "Initializing Windows-side configuration"
+        
+        # Check if Scoop is installed
+        if (-not (Get-Command scoop -ErrorAction SilentlyContinue)) {
+            Write-Warning-Custom "Scoop is not installed"
+            Write-Info "Install Scoop first with:"
+            Write-Host "  irm get.scoop.sh | iex" -ForegroundColor White
+            exit 1
+        }
+        
+        Write-Success "Scoop is installed"
+        
+        # Run the Windows setup script
+        $SetupScript = Join-Path $DotfilesDir "scripts\setup-windows.ps1"
+        
+        if (-not (Test-Path $SetupScript)) {
+            Write-Error-Custom "Setup script not found: $SetupScript"
+            exit 1
+        }
+        
+        Write-Info "Running Windows setup script..."
+        & $SetupScript
+        
+        if ($LASTEXITCODE -eq 0) {
+            Write-Header "Windows setup complete! 🎉"
+            Write-Info "Packages, modules, and symlinks have been configured"
+        } else {
+            Write-Error-Custom "Windows setup failed"
+            exit 1
+        }
+    }
+    
+    "update" {
+        Write-Header "Updating dotfiles"
+        
+        # Pull latest changes
+        Write-Info "Pulling latest changes..."
+        Push-Location $DotfilesDir
+        try {
+            git pull
+            Write-Success "Repository updated"
+        } catch {
+            Write-Error-Custom "Failed to update repository: $_"
+            Pop-Location
+            exit 1
+        }
+        Pop-Location
+        
+        # Update Scoop packages
+        if (Get-Command scoop -ErrorAction SilentlyContinue) {
+            $response = Read-Host "Update Scoop packages? (Y/n)"
+            if ($response -eq "" -or $response -match "^[Yy]") {
+                Write-Info "Updating Scoop packages..."
+                scoop update
+                scoop update *
+                Write-Success "Scoop packages updated"
+            }
+        }
+        
+        # Update PowerShell modules
+        $response = Read-Host "Update PowerShell modules? (Y/n)"
+        if ($response -eq "" -or $response -match "^[Yy]") {
+            Write-Info "Updating PowerShell modules..."
+            try {
+                Update-Module -AcceptLicense -Scope CurrentUser
+                Write-Success "PowerShell modules updated"
+            } catch {
+                Write-Warning-Custom "Some modules failed to update: $_"
+            }
+        }
+        
+        # Update mise
+        if (Get-Command mise -ErrorAction SilentlyContinue) {
+            $response = Read-Host "Update mise and runtimes? (y/N)"
+            if ($response -match "^[Yy]") {
+                Write-Info "Updating mise..."
+                if (Get-Command scoop -ErrorAction SilentlyContinue) {
+                    scoop update mise
+                }
+                
+                Write-Info "Upgrading mise-managed runtimes..."
+                mise upgrade
+                Write-Success "Mise updated"
+            }
+        }
+        
+        Write-Info "Note: Re-stowing dotfiles should be done from WSL"
+        Write-Info "Run 'dot update' from WSL to update symlinks"
+    }
+    
+    "doctor" {
+        Write-Header "Running diagnostics"
+        Write-Info "Environment: Windows"
+        Write-Info "Dotfiles dir: $DotfilesDir"
+        
+        $issues = 0
+        
+        # Check Scoop
+        if (Get-Command scoop -ErrorAction SilentlyContinue) {
+            Write-Success "Scoop installed"
+            $scoopVersion = scoop --version
+            Write-Info "  Version: $scoopVersion"
+        } else {
+            Write-Error-Custom "Scoop not installed"
+            Write-Info "  Install: irm get.scoop.sh | iex"
+            $issues++
+        }
+        
+        # Check key tools
+        $tools = @("git", "nvim", "mise")
+        foreach ($tool in $tools) {
+            if (Get-Command $tool -ErrorAction SilentlyContinue) {
+                Write-Success "$tool is available"
+            } else {
+                Write-Warning-Custom "$tool not installed (install via Scoop)"
+            }
+        }
+        
+        # Check PowerShell modules
+        Write-Info "Checking PowerShell modules..."
+        $modules = @("PSReadLine", "PSFzf", "posh-git", "Terminal-Icons")
+        foreach ($module in $modules) {
+            if (Get-Module -ListAvailable -Name $module) {
+                Write-Success "$module module installed"
+            } else {
+                Write-Warning-Custom "$module module not installed"
+            }
+        }
+        
+        # Check mise installations
+        Write-Info "Checking mise installations..."
+        if (Get-Command mise -ErrorAction SilentlyContinue) {
+            Write-Success "mise is available"
+            $miseVersion = mise --version
+            Write-Info "  Version: $miseVersion"
+            
+            $runtimes = mise list 2>$null
+            if ($runtimes) {
+                Write-Info "  Installed runtimes:"
+                $runtimes | ForEach-Object {
+                    if ($_.Trim()) {
+                        Write-Info "    $_"
+                    }
+                }
+            } else {
+                Write-Info "  No runtimes installed yet (use 'mise install')"
+            }
+        } else {
+            Write-Warning-Custom "mise not installed"
+        }
+        
+        # Summary
+        Write-Host ""
+        if ($issues -eq 0) {
+            Write-Header "All critical checks passed! ✨"
+        } else {
+            Write-Header "Found $issues critical issue(s)"
+            Write-Info "Run 'dot.ps1 init-windows' to fix"
+        }
+    }
+    
+    "init" {
+        Write-Warning-Custom "The 'init' command should be run from WSL"
+        Write-Info "For Windows setup, use: .\dot.ps1 init-windows"
+        Write-Info ""
+        Write-Info "To run WSL init:"
+        
+        # Try to detect WSL
+        if (Get-Command wsl -ErrorAction SilentlyContinue) {
+            Write-Info "  wsl -d Ubuntu -e bash -c 'cd /mnt/c/dev/projects/dotfiles && ./dot init'"
+        } else {
+            Write-Info "  Run './dot init' from within WSL"
+        }
+    }
+    
+    "stow" {
+        Write-Warning-Custom "The 'stow' command should be run from WSL"
+        Write-Info "Stowing (creating symlinks) requires GNU Stow which runs in WSL"
+        Write-Info ""
+        Write-Info "To run stow:"
+        
+        if (Get-Command wsl -ErrorAction SilentlyContinue) {
+            Write-Info "  wsl -d Ubuntu -e bash -c 'cd /mnt/c/dev/projects/dotfiles && ./dot stow'"
+        } else {
+            Write-Info "  Run './dot stow' from within WSL"
+        }
+    }
+    
+    "help" {
+        Write-Host @"
+
+DOTFILES MANAGEMENT (PowerShell Wrapper)
+
+USAGE:
+    .\dot.ps1 <command> [options]
+
+COMMANDS:
+    init-windows      Initialize Windows-side configuration
+    update            Update dotfiles and Windows packages
+    doctor            Run diagnostics for Windows environment
+    help              Show this help message
+    
+    init              WSL command (run from WSL instead)
+    stow              WSL command (run from WSL instead)
+
+WINDOWS COMMANDS:
+    .\dot.ps1 init-windows    # Setup Windows packages and configs
+    .\dot.ps1 update          # Update Scoop packages and PowerShell modules
+    .\dot.ps1 doctor          # Check Windows environment
+
+WSL COMMANDS (run from WSL):
+    ./dot init                # Initialize WSL environment
+    ./dot update              # Update Homebrew and re-stow configs
+    ./dot stow                # Create/update symlinks
+
+EXAMPLES:
+    # Windows setup
+    .\dot.ps1 init-windows
+
+    # Check everything is installed
+    .\dot.ps1 doctor
+
+    # Update packages
+    .\dot.ps1 update
+
+    # Run WSL commands from PowerShell
+    wsl -e bash -c 'cd /mnt/c/dev/projects/dotfiles && ./dot init'
+
+For more information, see README.md
+
+"@ -ForegroundColor White
+    }
+    
+    default {
+        Write-Error-Custom "Unknown command: $Command"
+        Write-Info "Run '.\dot.ps1 help' for usage information"
+        exit 1
+    }
+}

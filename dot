@@ -272,78 +272,59 @@ setup_zsh_shell() {
 
 # Command functions
 cmd_init() {
-    print_header "Initializing dotfiles for WSL/Windows environment"
+    print_header "Initializing dotfiles for WSL environment"
     print_info "Environment: ${ENVIRONMENT}"
     
-    if [[ "$ENVIRONMENT" == "wsl" ]]; then
-        TOTAL_STEPS=5
-        CURRENT_STEP=0
-        
-        install_homebrew_wsl || return 1
-        install_packages_wsl || return 1
-        symlink_configs || return 1
-        setup_zsh_shell || print_warning "Zsh setup failed (continuing)"
-        
-        print_header "WSL setup complete! 🎉"
-        print_info "Next steps:"
-        print_info "1. Edit home/.config/git/config with your email and name"
-        print_info "2. Install runtimes with mise (e.g., 'mise use -g bun@latest')"
-        print_info "3. Run './dot init-windows' from PowerShell to setup Windows side"
-        
-    elif [[ "$ENVIRONMENT" == "windows" ]]; then
-        print_warning "Running from Windows Git Bash"
-        print_info "For best results, run 'dot init' from WSL"
-        print_info "For Windows setup, see 'dot init-windows'"
-    else
-        print_error "Unknown environment"
+    if [[ "$ENVIRONMENT" != "wsl" ]]; then
+        print_error "This command must be run from WSL"
+        print_info "For Windows setup, use PowerShell:"
+        print_info "  cd C:\\dev\\projects\\dotfiles"
+        print_info "  .\\dot.ps1 init-windows"
         return 1
     fi
+    
+    TOTAL_STEPS=5
+    CURRENT_STEP=0
+    
+    install_homebrew_wsl || return 1
+    install_packages_wsl || return 1
+    symlink_configs || return 1
+    setup_zsh_shell || print_warning "Zsh setup failed (continuing)"
+    
+    print_header "WSL setup complete! 🎉"
+    print_info "Next steps:"
+    print_info "1. Edit home/.config/git/config with your email and name"
+    print_info "2. Install runtimes with mise (e.g., 'mise use -g bun@latest')"
+    print_info "3. Setup Windows side:"
+    print_info "   From PowerShell: cd C:\\dev\\projects\\dotfiles; .\\dot.ps1 init-windows"
 }
 
 cmd_init_windows() {
-    print_header "Initializing Windows-side configuration"
+    print_header "Windows setup should use PowerShell wrapper"
     
-    # Check if running in PowerShell
-    if [[ -n "$PSVersionTable" ]] || command -v pwsh >/dev/null 2>&1 || command -v powershell.exe >/dev/null 2>&1; then
-        print_info "Detected PowerShell environment"
-        
-        # Check if Scoop is installed
-        if ! command_exists scoop; then
-            print_warning "Scoop is not installed"
-            print_info "Install Scoop first: irm get.scoop.sh | iex"
-            return 1
-        fi
-        
-        # Run the Windows setup script
-        print_info "Running Windows setup script..."
-        local setup_script="${SCRIPTS_DIR}/setup-windows.ps1"
-        
-        if [[ ! -f "$setup_script" ]]; then
-            print_error "Setup script not found: $setup_script"
-            return 1
-        fi
-        
-        if powershell.exe -ExecutionPolicy Bypass -File "$setup_script"; then
-            print_header "Windows setup complete! 🎉"
-            print_info "Packages, modules, and symlinks have been configured"
-        else
-            print_error "Windows setup failed"
-            return 1
-        fi
-    else
-        print_warning "This command should be run from PowerShell"
-        print_info "Run from PowerShell:"
-        print_info "  cd ${DOTFILES_DIR}"
-        print_info "  .\\scripts\\setup-windows.ps1"
-        print_info ""
-        print_info "Or if Scoop is not installed yet:"
-        print_info "  1. Install Scoop: irm get.scoop.sh | iex"
-        print_info "  2. Run: .\\scripts\\setup-windows.ps1"
-    fi
+    print_warning "This bash command is deprecated"
+    print_info "Use the PowerShell wrapper instead:"
+    print_info ""
+    print_info "From PowerShell:"
+    print_info "  cd C:\\dev\\projects\\dotfiles"
+    print_info "  .\\dot.ps1 init-windows"
+    print_info ""
+    print_info "This will:"
+    print_info "  - Install Scoop packages"
+    print_info "  - Install PowerShell modules"
+    print_info "  - Create Windows symlinks"
 }
 
 cmd_update() {
     print_header "Updating dotfiles"
+    
+    if [[ "$ENVIRONMENT" != "wsl" ]]; then
+        print_error "This command must be run from WSL"
+        print_info "For Windows updates, use PowerShell:"
+        print_info "  cd C:\\dev\\projects\\dotfiles"
+        print_info "  .\\dot.ps1 update"
+        return 1
+    fi
     
     # Pull latest changes
     print_info "Pulling latest changes..."
@@ -354,46 +335,22 @@ cmd_update() {
         return 1
     fi
     
-    # Update packages based on environment
-    if [[ "$ENVIRONMENT" == "wsl" ]]; then
-        if confirm "Update Homebrew packages?" "y"; then
-            print_info "Updating Homebrew packages..."
-            brew update && brew upgrade
-            print_success "Homebrew packages updated"
-        fi
-        
-        # Re-symlink dotfiles
-        if confirm "Re-stow dotfiles?" "y"; then
-            symlink_configs
-        fi
-        
-    elif [[ "$ENVIRONMENT" == "windows" ]]; then
-        if command_exists scoop && confirm "Update Scoop packages?" "y"; then
-            print_info "Updating Scoop packages..."
-            if powershell.exe -Command "scoop update; scoop update *"; then
-                print_success "Scoop packages updated"
-            else
-                print_warning "Some Scoop packages failed to update"
-            fi
-        fi
-        
-        if confirm "Update PowerShell modules?" "y"; then
-            print_info "Updating PowerShell modules..."
-            powershell.exe -Command "Update-Module -AcceptLicense -Scope CurrentUser" || print_warning "Some modules failed to update"
-        fi
-        
-        print_info "Note: Re-stowing dotfiles should be done from WSL"
-        print_info "Run 'dot update' from WSL to update symlinks"
+    # Update Homebrew packages
+    if confirm "Update Homebrew packages?" "y"; then
+        print_info "Updating Homebrew packages..."
+        brew update && brew upgrade
+        print_success "Homebrew packages updated"
     fi
     
-    # Update mise (cross-platform)
+    # Re-symlink dotfiles
+    if confirm "Re-stow dotfiles?" "y"; then
+        symlink_configs
+    fi
+    
+    # Update mise
     if command_exists mise && confirm "Update mise and runtimes?" "n"; then
         print_info "Updating mise..."
-        if [[ "$ENVIRONMENT" == "wsl" ]]; then
-            brew upgrade mise
-        elif command_exists scoop; then
-            powershell.exe -Command "scoop update mise"
-        fi
+        brew upgrade mise
         
         print_info "Upgrading mise-managed runtimes..."
         mise upgrade || print_warning "Some runtimes failed to upgrade"
@@ -404,104 +361,61 @@ cmd_update() {
 cmd_doctor() {
     print_header "Running diagnostics"
     
+    if [[ "$ENVIRONMENT" != "wsl" ]]; then
+        print_error "This command must be run from WSL"
+        print_info "For Windows diagnostics, use PowerShell:"
+        print_info "  cd C:\\dev\\projects\\dotfiles"
+        print_info "  .\\dot.ps1 doctor"
+        return 1
+    fi
+    
     print_info "Environment: ${ENVIRONMENT}"
     print_info "Dotfiles dir: ${DOTFILES_DIR}"
     
     local issues=0
     
-    if [[ "$ENVIRONMENT" == "wsl" ]]; then
-        # Check Homebrew
-        if command_exists brew; then
-            print_success "Homebrew installed"
-            print_info "  Version: $(brew --version | head -n1)"
-        else
-            print_error "Homebrew not installed"
-            ((++issues))
-        fi
-        
-        # Check Stow
-        if command_exists stow; then
-            print_success "GNU Stow installed"
-        else
-            print_error "GNU Stow not installed (required for symlinks)"
-            ((++issues))
-        fi
-        
-        # Check key tools for WSL
-        local tools=("git" "nvim" "tmux" "zsh" "mise")
-        for tool in "${tools[@]}"; do
-            if command_exists "$tool"; then
-                print_success "$tool is available"
-            else
-                print_warning "$tool not installed"
-            fi
-        done
-        
-        # Check config files
-        if [[ -f "${HOME}/.config/git/config" ]] || [[ -L "${HOME}/.config/git/config" ]]; then
-            print_success "Git config linked"
-        else
-            print_warning "Git config not linked (run 'dot stow')"
-        fi
-        
-        # Check if zsh is default shell
-        if [[ "$SHELL" == *"zsh"* ]]; then
-            print_success "Zsh is default shell"
-        else
-            print_warning "Zsh is not default shell"
-        fi
-        
-    elif [[ "$ENVIRONMENT" == "windows" ]]; then
-        # Check Scoop
-        if command_exists scoop; then
-            print_success "Scoop installed"
-            print_info "  Version: $(powershell.exe -Command "scoop --version" 2>/dev/null | tr -d '\r')"
-        else
-            print_error "Scoop not installed"
-            print_info "  Install: irm get.scoop.sh | iex (in PowerShell)"
-            ((++issues))
-        fi
-        
-        # Check key tools for Windows
-        local tools=("git" "nvim" "mise")
-        for tool in "${tools[@]}"; do
-            if command_exists "$tool" || command_exists "${tool}.exe"; then
-                print_success "$tool is available"
-            else
-                print_warning "$tool not installed (install via Scoop)"
-            fi
-        done
-        
-        # Check PowerShell modules
-        print_info "Checking PowerShell modules..."
-        local modules=("PSReadLine" "PSFzf" "posh-git" "Terminal-Icons")
-        for module in "${modules[@]}"; do
-            if powershell.exe -Command "Get-Module -ListAvailable -Name $module" 2>/dev/null | grep -q "$module"; then
-                print_success "$module module installed"
-            else
-                print_warning "$module module not installed"
-            fi
-        done
-        
-        # Check if running from WSL can access Windows home
-        if [[ -n "$WSLENV" ]]; then
-            local win_home
-            win_home=$(cmd.exe /c "echo %USERPROFILE%" 2>/dev/null | tr -d '\r')
-            if [[ -n "$win_home" ]]; then
-                print_success "WSL can access Windows home"
-                print_info "  Windows home: $win_home"
-            else
-                print_warning "Cannot determine Windows home directory"
-            fi
-        fi
-        
-        # Check symlinks (if running from WSL)
-        if [[ -n "$WSLENV" ]]; then
-            print_info "Note: Run 'dot doctor' from WSL to check symlink status"
-        fi
+    # Check Homebrew
+    if command_exists brew; then
+        print_success "Homebrew installed"
+        print_info "  Version: $(brew --version | head -n1)"
+    else
+        print_error "Homebrew not installed"
+        ((++issues))
     fi
     
-    # Cross-platform checks
+    # Check Stow
+    if command_exists stow; then
+        print_success "GNU Stow installed"
+    else
+        print_error "GNU Stow not installed (required for symlinks)"
+        ((++issues))
+    fi
+    
+    # Check key tools for WSL
+    local tools=("git" "nvim" "tmux" "zsh" "mise")
+    for tool in "${tools[@]}"; do
+        if command_exists "$tool"; then
+            print_success "$tool is available"
+        else
+            print_warning "$tool not installed"
+        fi
+    done
+    
+    # Check config files
+    if [[ -f "${HOME}/.config/git/config" ]] || [[ -L "${HOME}/.config/git/config" ]]; then
+        print_success "Git config linked"
+    else
+        print_warning "Git config not linked (run 'dot stow')"
+    fi
+    
+    # Check if zsh is default shell
+    if [[ "$SHELL" == *"zsh"* ]]; then
+        print_success "Zsh is default shell"
+    else
+        print_warning "Zsh is not default shell"
+    fi
+    
+    # Check mise installations
     print_info "Checking mise installations..."
     if command_exists mise; then
         print_success "mise is available"
@@ -528,7 +442,7 @@ cmd_doctor() {
         print_header "All critical checks passed! ✨"
     else
         print_header "Found $issues critical issues"
-        print_info "Run 'dot init' (WSL) or 'dot init-windows' (PowerShell) to fix"
+        print_info "Run 'dot init' to fix"
     fi
 }
 
@@ -538,26 +452,37 @@ cmd_stow() {
 
 cmd_help() {
     cat << EOF
-${BOLD}${SCRIPT_NAME}${RESET} - Dotfiles management for WSL/Windows
+${BOLD}${SCRIPT_NAME}${RESET} - Dotfiles management for WSL
 
 ${BOLD}USAGE:${RESET}
     ${SCRIPT_NAME} <command> [options]
 
-${BOLD}COMMANDS:${RESET}
-    init              Initialize dotfiles (run in WSL)
-    init-windows      Show Windows setup instructions
-    update            Update dotfiles and packages
-    doctor            Run diagnostics
+${BOLD}COMMANDS (WSL):${RESET}
+    init              Initialize WSL dotfiles environment
+    update            Update Homebrew packages and re-stow configs
+    doctor            Run WSL diagnostics
     stow              Create/update symlinks
     help              Show this help message
+    
+    init-windows      Show Windows setup instructions
+
+${BOLD}WINDOWS COMMANDS:${RESET}
+    For Windows, use the PowerShell wrapper instead:
+    
+    cd C:\\dev\\projects\\dotfiles
+    .\\dot.ps1 init-windows    # Setup Windows packages and configs
+    .\\dot.ps1 update          # Update Scoop and PowerShell modules
+    .\\dot.ps1 doctor          # Check Windows installation
 
 ${BOLD}ENVIRONMENT:${RESET}
     Current: ${ENVIRONMENT}
+    Note: This bash script is designed for WSL
 
 ${BOLD}EXAMPLES:${RESET}
-    ${SCRIPT_NAME} init            # Initial setup in WSL
-    ${SCRIPT_NAME} update          # Update everything
-    ${SCRIPT_NAME} doctor          # Check installation
+    ${SCRIPT_NAME} init            # Initial WSL setup
+    ${SCRIPT_NAME} update          # Update WSL packages
+    ${SCRIPT_NAME} doctor          # Check WSL installation
+    ${SCRIPT_NAME} stow            # Re-create symlinks
 
 EOF
 }
