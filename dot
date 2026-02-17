@@ -355,14 +355,49 @@ cmd_update() {
     fi
     
     # Update packages based on environment
-    if [[ "$ENVIRONMENT" == "wsl" ]] && confirm "Update Homebrew packages?" "y"; then
-        brew update && brew upgrade
-        print_success "Packages updated"
+    if [[ "$ENVIRONMENT" == "wsl" ]]; then
+        if confirm "Update Homebrew packages?" "y"; then
+            print_info "Updating Homebrew packages..."
+            brew update && brew upgrade
+            print_success "Homebrew packages updated"
+        fi
+        
+        # Re-symlink dotfiles
+        if confirm "Re-stow dotfiles?" "y"; then
+            symlink_configs
+        fi
+        
+    elif [[ "$ENVIRONMENT" == "windows" ]]; then
+        if command_exists scoop && confirm "Update Scoop packages?" "y"; then
+            print_info "Updating Scoop packages..."
+            if powershell.exe -Command "scoop update; scoop update *"; then
+                print_success "Scoop packages updated"
+            else
+                print_warning "Some Scoop packages failed to update"
+            fi
+        fi
+        
+        if confirm "Update PowerShell modules?" "y"; then
+            print_info "Updating PowerShell modules..."
+            powershell.exe -Command "Update-Module -AcceptLicense -Scope CurrentUser" || print_warning "Some modules failed to update"
+        fi
+        
+        print_info "Note: Re-stowing dotfiles should be done from WSL"
+        print_info "Run 'dot update' from WSL to update symlinks"
     fi
     
-    # Re-symlink dotfiles
-    if confirm "Re-stow dotfiles?" "y"; then
-        symlink_configs
+    # Update mise (cross-platform)
+    if command_exists mise && confirm "Update mise and runtimes?" "n"; then
+        print_info "Updating mise..."
+        if [[ "$ENVIRONMENT" == "wsl" ]]; then
+            brew upgrade mise
+        elif command_exists scoop; then
+            powershell.exe -Command "scoop update mise"
+        fi
+        
+        print_info "Upgrading mise-managed runtimes..."
+        mise upgrade || print_warning "Some runtimes failed to upgrade"
+        print_success "Mise updated"
     fi
 }
 
