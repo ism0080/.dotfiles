@@ -20,7 +20,7 @@ if (-not (Test-Path $ModulesFile)) {
     exit 1
 }
 
-# Read modules list
+# Read modules list, skip blanks and comments
 $Modules = Get-Content $ModulesFile | Where-Object { 
     $_.Trim() -ne "" -and -not $_.StartsWith("#") 
 }
@@ -36,34 +36,49 @@ if (-not $IsAdmin) {
     Write-Host ""
 }
 
-# Install each module
-foreach ($Module in $Modules) {
-    Write-Host "Checking $Module..." -ForegroundColor Cyan
-    
-    if (Get-Module -ListAvailable -Name $Module) {
+# Ensure NuGet provider is available
+if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {
+    Write-Host "Installing NuGet package provider..." -ForegroundColor Cyan
+    try {
+        Install-PackageProvider -Name NuGet -Force -Scope CurrentUser -ErrorAction Stop
+        Write-Host "  ✓ NuGet provider installed" -ForegroundColor Green
+    } catch {
+        Write-Host "  ✗ Failed to install NuGet provider: $_" -ForegroundColor Red
+        exit 1
+    }
+}
+
+# Helper function for module install/update
+function Ensure-Module {
+    param(
+        [string]$ModuleName,
+        [switch]$Force,
+        [bool]$IsAdmin
+    )
+
+    $scope = if ($IsAdmin) { "AllUsers" } else { "CurrentUser" }
+
+    if (Get-Module -ListAvailable -Name $ModuleName) {
         if ($Force) {
-            Write-Host "  Updating $Module..." -ForegroundColor Yellow
-            try {
-                Update-Module -Name $Module -Force -ErrorAction Stop
-                Write-Host "  ✓ Updated $Module" -ForegroundColor Green
-            } catch {
-                Write-Host "  ⚠ Could not update $Module: $_" -ForegroundColor Yellow
-            }
+            Write-Host "  Updating $ModuleName..." -ForegroundColor Yellow
+            Update-Module -Name $ModuleName -Force -ErrorAction Stop
         } else {
-            Write-Host "  ✓ $Module already installed (use -Force to update)" -ForegroundColor Green
+            Write-Host "  ✓ $ModuleName already installed (use -Force to update)" -ForegroundColor Green
         }
     } else {
-        Write-Host "  Installing $Module..." -ForegroundColor Yellow
-        try {
-            if ($IsAdmin) {
-                Install-Module -Name $Module -Scope AllUsers -Force -AllowClobber
-            } else {
-                Install-Module -Name $Module -Scope CurrentUser -Force -AllowClobber
-            }
-            Write-Host "  ✓ Installed $Module" -ForegroundColor Green
-        } catch {
-            Write-Host "  ✗ Failed to install $Module: $_" -ForegroundColor Red
-        }
+        Write-Host "  Installing $ModuleName..." -ForegroundColor Yellow
+        Install-Module -Name $ModuleName -Scope $scope -Force -AllowClobber -ErrorAction Stop
+    }
+}
+
+# Install/update each module
+foreach ($Module in $Modules) {
+    Write-Host "Processing $Module..." -ForegroundColor Cyan
+    try {
+        Ensure-Module -ModuleName $Module -Force:$Force -IsAdmin:$IsAdmin
+        Write-Host "  ✓ $Module installed/updated" -ForegroundColor Green
+    } catch {
+        Write-Host "  ✗ Failed to install/update ${Module}: $_" -ForegroundColor Red
     }
 }
 

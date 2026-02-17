@@ -1,11 +1,8 @@
 # PowerShell Modules for dotfiles setup
 # Install with: ./scripts/install-psmodules.ps1
 
-# Essential modules
+# Modules
 PSReadLine
 PSFzf
-posh-git
-
-# Optional but recommended
 Terminal-Icons
 BurntToast

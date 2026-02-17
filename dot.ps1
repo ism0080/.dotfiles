@@ -8,7 +8,7 @@
     dotfiles management commands from PowerShell on Windows.
 
 .PARAMETER Command
-    The dot command to run (init, init-windows, update, doctor, stow, help)
+    The dot command to run (init, init, update, doctor, stow, help)
 
 .PARAMETER Arguments
     Additional arguments to pass to the command
@@ -18,7 +18,7 @@
     Run diagnostics on your dotfiles setup
 
 .EXAMPLE
-    .\dot.ps1 init-windows
+    .\dot.ps1 init
     Initialize Windows-side configuration
 
 .EXAMPLE
@@ -90,7 +90,7 @@ if (-not $IsWindows -and -not $env:OS -match "Windows") {
 
 # Handle different commands
 switch ($Command.ToLower()) {
-    "init-windows" {
+    "init" {
         Write-Header "Initializing Windows-side configuration"
         
         # Check if Scoop is installed
@@ -103,16 +103,20 @@ switch ($Command.ToLower()) {
         
         Write-Success "Scoop is installed"
         
-        # Run the Windows setup script
+        # Run the Windows setup script safely
         $SetupScript = Join-Path $DotfilesDir "scripts\setup-windows.ps1"
-        
+
         if (-not (Test-Path $SetupScript)) {
             Write-Error-Custom "Setup script not found: $SetupScript"
             exit 1
         }
-        
+
         Write-Info "Running Windows setup script..."
-        & $SetupScript
+
+        # Safely invoke the script in a new PowerShell process
+        $ScriptFile = (Get-Item $SetupScript).FullName
+        & $ScriptFile
+
         
         if ($LASTEXITCODE -eq 0) {
             Write-Header "Windows setup complete! 🎉"
@@ -234,7 +238,7 @@ switch ($Command.ToLower()) {
         }
         
         # Check key tools
-        $tools = @("git", "nvim", "mise")
+        $tools = @("git", "nvim", "mise", "starship", "docker", "lazydocker", "lazygit", "yazi", "cascadia-code")
         foreach ($tool in $tools) {
             if (Get-Command $tool -ErrorAction SilentlyContinue) {
                 Write-Success "$tool is available"
@@ -245,7 +249,7 @@ switch ($Command.ToLower()) {
         
         # Check PowerShell modules
         Write-Info "Checking PowerShell modules..."
-        $modules = @("PSReadLine", "PSFzf", "posh-git", "Terminal-Icons")
+        $modules = @("PSReadLine", "PSFzf", "Terminal-Icons")
         foreach ($module in $modules) {
             if (Get-Module -ListAvailable -Name $module) {
                 Write-Success "$module module installed"
@@ -282,13 +286,13 @@ switch ($Command.ToLower()) {
             Write-Header "All critical checks passed! ✨"
         } else {
             Write-Header "Found $issues critical issue(s)"
-            Write-Info "Run 'dot.ps1 init-windows' to fix"
+            Write-Info "Run 'dot.ps1 init' to fix"
         }
     }
     
     "init" {
         Write-Warning-Custom "The 'init' command should be run from WSL"
-        Write-Info "For Windows setup, use: .\dot.ps1 init-windows"
+        Write-Info "For Windows setup, use: .\dot.ps1 init"
         Write-Info ""
         Write-Info "To run WSL init:"
         
@@ -374,7 +378,7 @@ USAGE:
     .\dot.ps1 <command> [options]
 
 COMMANDS:
-    init-windows      Initialize Windows-side configuration
+    init      Initialize Windows-side configuration
     update            Update dotfiles and Windows packages
     doctor            Run diagnostics for Windows environment
     gui-apps          Show recommended GUI applications
@@ -384,7 +388,7 @@ COMMANDS:
     stow              WSL command (run from WSL instead)
 
 WINDOWS COMMANDS:
-    .\dot.ps1 init-windows    # Setup Windows packages and configs
+    .\dot.ps1 init    # Setup Windows packages and configs
     .\dot.ps1 update          # Update Scoop packages and PowerShell modules
     .\dot.ps1 doctor          # Check Windows environment
     .\dot.ps1 gui-apps        # Show GUI apps recommendations
@@ -396,7 +400,7 @@ WSL COMMANDS (run from WSL):
 
 EXAMPLES:
     # Windows setup
-    .\dot.ps1 init-windows
+    .\dot.ps1 init
 
     # Check everything is installed
     .\dot.ps1 doctor

@@ -67,24 +67,24 @@ if (-not $SkipScoop) {
         if (-not $NoPrompt) {
             Write-Host ""
             Write-Host "Optional app groups:" -ForegroundColor Cyan
-            
+
             if (-not $IncludeFonts -and $ScoopConfig.fonts.Count -gt 0) {
-                $response = Read-Host "Install fonts? (y/N)"
+                $response = Read-Host 'Install fonts? (y/N)'
                 $IncludeFonts = $response -eq 'y' -or $response -eq 'Y'
             }
-            
+
             if (-not $IncludeGUI -and $ScoopConfig.'gui-apps'.Count -gt 0) {
-                $response = Read-Host "Install GUI apps (vscode, zed, obsidian)? (y/N)"
+                $response = Read-Host 'Install GUI apps (vscode, zed, obsidian)? (y/N)'
                 $IncludeGUI = $response -eq 'y' -or $response -eq 'Y'
             }
-            
+
             if (-not $IncludeOptionalEssentials -and $ScoopConfig.optional_essentials.Count -gt 0) {
-                $response = Read-Host "Install optional essentials? (y/N)"
+                $response = Read-Host 'Install optional essentials? (y/N)'
                 $IncludeOptionalEssentials = $response -eq 'y' -or $response -eq 'Y'
             }
-            
+
             if (-not $IncludeWorkTools -and $ScoopConfig.optional_work_tools.Count -gt 0) {
-                $response = Read-Host "Install work tools (nswagstudio, mongodb-compass, etc.)? (y/N)"
+                $response = Read-Host 'Install work tools (nswagstudio, mongodb-compass, etc.)? (y/N)'
                 $IncludeWorkTools = $response -eq 'y' -or $response -eq 'Y'
             }
         }
@@ -154,18 +154,22 @@ if (-not $SkipScoop) {
 if (-not $SkipModules) {
     Write-Host "[2/3] Installing PowerShell modules..." -ForegroundColor Cyan
     Write-Host ""
-    
+
     $InstallModulesScript = Join-Path $DotfilesRoot "scripts\install-psmodules.ps1"
+
     if (Test-Path $InstallModulesScript) {
+        # Get absolute path safely
+        $ScriptFile = (Get-Item $InstallModulesScript).FullName
+
         if ($Force) {
-            & $InstallModulesScript -Force
+            & $ScriptFile -Force
         } else {
-            & $InstallModulesScript
+            & $ScriptFile
         }
     } else {
         Write-Host "install-psmodules.ps1 not found" -ForegroundColor Red
     }
-    
+
     Write-Host ""
 } else {
     Write-Host "[2/3] Skipping PowerShell modules (--SkipModules)" -ForegroundColor Yellow
