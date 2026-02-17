@@ -95,6 +95,17 @@ if (Get-Command lazydocker -ErrorAction SilentlyContinue) {
 
 # Dotfiles
 function dots { Set-Location ~/.dotfiles }
+function dot {
+    $DotfilesDir = if (Test-Path "$HOME\.dotfiles") {
+        "$HOME\.dotfiles"
+    } elseif (Test-Path "C:\dev\projects\dotfiles") {
+        "C:\dev\projects\dotfiles"
+    } else {
+        Write-Error "Dotfiles directory not found"
+        return
+    }
+    & "$DotfilesDir\dot.ps1" @args
+}
 
 # Common directories
 function dev { Set-Location "C:\dev" }

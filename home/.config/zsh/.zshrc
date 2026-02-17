@@ -81,6 +81,7 @@ alias vim="nvim"
 
 # Dotfiles
 alias dots="cd ~/.dotfiles"
+alias dot="~/.dotfiles/dot"
 
 # Modern replacements (if installed)
 if command -v lsd &> /dev/null; then
