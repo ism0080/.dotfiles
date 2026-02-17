@@ -10,6 +10,9 @@ dotnet = "latest"
 go = "latest"
 fnox = "latest"
 
+[shell_alias]
+dev = "npm run dev"
+
 # You can specify exact versions:
 # node = "20.11.0"
 # python = "3.12.0"

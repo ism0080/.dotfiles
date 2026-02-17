@@ -117,6 +117,40 @@ switch ($Command.ToLower()) {
         if ($LASTEXITCODE -eq 0) {
             Write-Header "Windows setup complete! 🎉"
             Write-Info "Packages, modules, and symlinks have been configured"
+            
+            # Display GUI applications recommendations
+            Write-Host ""
+            Write-Header "Recommended GUI Applications"
+            
+            $GuiAppsFile = Join-Path $DotfilesDir "packages\gui-apps.txt"
+            if (Test-Path $GuiAppsFile) {
+                Write-Info "Consider installing these GUI applications:"
+                Write-Host ""
+                
+                Get-Content $GuiAppsFile | ForEach-Object {
+                    $line = $_.Trim()
+                    # Skip empty lines and comments
+                    if ($line -and -not $line.StartsWith("#")) {
+                        $parts = $line -split '\|'
+                        if ($parts.Count -eq 3) {
+                            $app = $parts[0].Trim()
+                            $description = $parts[1].Trim()
+                            $installCmd = $parts[2].Trim()
+                            
+                            Write-Host "  • " -NoNewline -ForegroundColor Cyan
+                            Write-Host "$app" -NoNewline -ForegroundColor Yellow
+                            Write-Host " - $description" -ForegroundColor White
+                            Write-Host "    Install: " -NoNewline -ForegroundColor DarkGray
+                            Write-Host "$installCmd" -ForegroundColor DarkGray
+                        }
+                    }
+                }
+                
+                Write-Host ""
+                Write-Info "To see this list again, run: dot gui-apps"
+            } else {
+                Write-Warning-Custom "GUI apps list not found at $GuiAppsFile"
+            }
         } else {
             Write-Error-Custom "Windows setup failed"
             exit 1
@@ -279,6 +313,58 @@ switch ($Command.ToLower()) {
         }
     }
     
+    "gui-apps" {
+        Write-Header "Recommended GUI Applications for Windows"
+        
+        $GuiAppsFile = Join-Path $DotfilesDir "packages\gui-apps.txt"
+        if (-not (Test-Path $GuiAppsFile)) {
+            Write-Error-Custom "GUI apps list not found at $GuiAppsFile"
+            exit 1
+        }
+        
+        Write-Info "These GUI applications are recommended for a complete setup:"
+        Write-Host ""
+        
+        $currentCategory = ""
+        Get-Content $GuiAppsFile | ForEach-Object {
+            $line = $_.Trim()
+            
+            # Handle category headers (comments that start with "# " followed by non-empty text)
+            if ($line -match "^# (.+)") {
+                $category = $matches[1]
+                if ($category -notmatch "^(Recommended|Format:)") {
+                    Write-Host ""
+                    Write-Host "  $category" -ForegroundColor Magenta -NoNewline
+                    Write-Host ""
+                    $currentCategory = $category
+                }
+            }
+            # Skip empty lines and format comments
+            elseif (-not $line -or $line.StartsWith("#")) {
+                # Skip
+            }
+            # Handle app entries
+            else {
+                $parts = $line -split '\|'
+                if ($parts.Count -eq 3) {
+                    $app = $parts[0].Trim()
+                    $description = $parts[1].Trim()
+                    $installCmd = $parts[2].Trim()
+                    
+                    Write-Host "    • " -NoNewline -ForegroundColor Cyan
+                    Write-Host "$app" -NoNewline -ForegroundColor Yellow
+                    Write-Host " - $description" -ForegroundColor White
+                    Write-Host "      " -NoNewline
+                    Write-Host "$installCmd" -ForegroundColor DarkGray
+                }
+            }
+        }
+        
+        Write-Host ""
+        Write-Info "Install individual apps as needed using the commands above"
+        Write-Info "Or install multiple at once: scoop install app1 app2 app3"
+    }
+    
     "help" {
         Write-Host @"
 
@@ -291,6 +377,7 @@ COMMANDS:
     init-windows      Initialize Windows-side configuration
     update            Update dotfiles and Windows packages
     doctor            Run diagnostics for Windows environment
+    gui-apps          Show recommended GUI applications
     help              Show this help message
     
     init              WSL command (run from WSL instead)
@@ -300,6 +387,7 @@ WINDOWS COMMANDS:
     .\dot.ps1 init-windows    # Setup Windows packages and configs
     .\dot.ps1 update          # Update Scoop packages and PowerShell modules
     .\dot.ps1 doctor          # Check Windows environment
+    .\dot.ps1 gui-apps        # Show GUI apps recommendations
 
 WSL COMMANDS (run from WSL):
     ./dot init                # Initialize WSL environment

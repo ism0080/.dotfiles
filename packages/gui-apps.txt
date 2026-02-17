@@ -1,0 +1,23 @@
+# Recommended GUI Applications for Windows
+# These should be installed manually or via Scoop extras bucket
+# Format: app-name | description | install-method
+
+# Browsers
+helium | Helium Chrome browser | https://helium.computer/
+
+# Development Tools
+windows-terminal | Windows Terminal | https://apps.microsoft.com/detail/9n0dx20hk701?hl=en-US&gl=NZ
+visual-studio | Visual Studio 19/22/26 | 
+sql-server | SQL Server Management Studio | 
+
+# Communication
+teams | Microsoft Teams | https://www.microsoft.com/en-us/microsoft-teams/download-app#download-for-desktop1
+
+# Utilities
+1password | 1 Password | https://1password.com/downloads/windows
+file-pilot | File Pilot |
+
+# Optional Development
+postman | Postman API testing | https://www.postman.com/downloads/
+docker-desktop | Docker Desktop | Download from docker.com
+compact-log-viewer | Compact Log Viewer | 
