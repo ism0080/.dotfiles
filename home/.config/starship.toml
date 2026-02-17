@@ -12,7 +12,7 @@ add_newline = true
 
 # Format
 format = """
-[┌─](bold green) $username$hostname$directory$git_branch$git_status
+[┌─](bold green) $username$hostname$directory$git_branch
 [└─](bold green) $character"""
 
 [character]
@@ -41,16 +41,7 @@ symbol = " "
 style = "bold purple"
 
 [git_status]
-format = '([\[$all_status$ahead_behind\]]($style) )'
-style = "bold red"
-conflicted = "🏳"
-up_to_date = "✓"
-untracked = "?"
-stashed = "$"
-modified = "!"
-staged = '+'
-renamed = "»"
-deleted = "✘"
+disabled = true
 
 [nodejs]
 format = "via [⬢ $version](bold green) "

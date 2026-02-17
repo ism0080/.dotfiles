@@ -111,7 +111,13 @@ install_homebrew_wsl() {
         
         # Configure Homebrew environment
         print_info "Configuring Homebrew environment..."
+        
+        # Add to .profile for future sessions
+        echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> ~/.profile
+        
+        # Load for current session
         eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+        
         print_success "Homebrew environment configured"
     else
         print_error "Homebrew installation failed"
@@ -255,10 +261,10 @@ symlink_configs() {
         return 1
     fi
     
-    # Special handling for configs that need to be accessible from both WSL and Windows
-    if [[ "$ENVIRONMENT" == "wsl" ]]; then
-        setup_windows_symlinks
-    fi
+    # # Special handling for configs that need to be accessible from both WSL and Windows
+    # if [[ "$ENVIRONMENT" == "wsl" ]]; then
+    #     # setup_windows_symlinks
+    # fi
 }
 
 setup_windows_symlinks() {
@@ -317,16 +323,16 @@ setup_zsh_shell() {
     fi
     
     # Set zsh as default shell
-    if [[ "$SHELL" != "$zsh_path" ]]; then
-        print_info "Setting Zsh as default shell..."
-        if chsh -s "$zsh_path" 2>/dev/null; then
-            print_success "Default shell changed to Zsh"
-        else
-            print_warning "Could not change default shell (may need sudo)"
-        fi
-    else
-        print_success "Zsh is already the default shell"
-    fi
+    # if [[ "$SHELL" != "$zsh_path" ]]; then
+    #     print_info "Setting Zsh as default shell..."
+    #     if chsh -s "$zsh_path" 2>/dev/null; then
+    #         print_success "Default shell changed to Zsh"
+    #     else
+    #         print_warning "Could not change default shell (may need sudo)"
+    #     fi
+    # else
+    #     print_success "Zsh is already the default shell"
+    # fi
 }
 
 # Command functions
@@ -353,9 +359,9 @@ cmd_init() {
     
     print_header "WSL setup complete! 🎉"
     print_info "Next steps:"
-    print_info "1. Edit home/.config/git/config with your email and name"
-    print_info "2. Install runtimes with mise (e.g., 'mise use -g bun@latest')"
-    print_info "3. Setup Windows side:"
+    print_info "1. chsh -s $(which zsh) to set Zsh as default shell (if not already)"
+    print_info "   exec zsh"
+    print_info "2. Setup Windows side:"
     print_info "   From PowerShell: cd C:\\dev\\projects\\dotfiles; .\\dot.ps1 init-windows"
 }
 

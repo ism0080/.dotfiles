@@ -28,88 +28,42 @@ setopt INC_APPEND_HISTORY
 
 # Completion
 autoload -Uz compinit
-compinit
+compinit -C
 
 # Enable colors
 autoload -U colors && colors
 
 # Homebrew environment (WSL)
-if [[ -d "/home/linuxbrew/.linuxbrew" ]]; then
-    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-fi
+export HOMEBREW_PREFIX="/home/linuxbrew/.linuxbrew"
+export PATH="$HOMEBREW_PREFIX/bin:$HOMEBREW_PREFIX/sbin:$PATH"
+export MANPATH="$HOMEBREW_PREFIX/share/man:$MANPATH"
+export INFOPATH="$HOMEBREW_PREFIX/share/info:$INFOPATH"
 
 # Starship prompt (if installed)
 if command -v starship &> /dev/null; then
     eval "$(starship init zsh)"
 fi
 
-# Zoxide (if installed)
+# # Zoxide (if installed)
 if command -v zoxide &> /dev/null; then
     eval "$(zoxide init zsh)"
 fi
 
-# Mise - Modern runtime version manager (if installed)
+# # Mise - Modern runtime version manager (if installed)
 if command -v mise &> /dev/null; then
-    eval "$(mise activate zsh)"
+    eval "$(mise hook-env -s zsh)"
 fi
 
-# fnox - Secrets manager
+# # fnox - Secrets manager
 if command -v fnox &> /dev/null; then
     eval "$(fnox activate zsh)"
 fi
-
-# Aliases
-# Git
-alias g="git"
-alias gs="git status"
-alias ga="git add"
-alias gc="git commit"
-alias gp="git push"
-alias gl="git pull"
-alias gco="git checkout"
-alias gd="git diff"
-alias glog="git log --oneline --graph --decorate"
-
-# Navigation
-alias ..="cd .."
-alias ...="cd ../.."
-alias ....="cd ../../.."
-
-# Neovim
-alias v="nvim"
-alias vim="nvim"
-
-# Dotfiles
-alias dots="cd ~/.dotfiles"
-alias dot="~/.dotfiles/dot"
-
-# Modern replacements (if installed)
-if command -v lsd &> /dev/null; then
-    alias ls="lsd"
-    alias l="lsd -la"
-    alias la="lsd -la"
-    alias ll="lsd -l"
-    alias tree="lsd --tree"
-elif command -v eza &> /dev/null; then
-    alias ls="eza"
-    alias l="eza -la"
-    alias la="eza -la"
-    alias ll="eza -l"
-    alias tree="eza --tree"
-else
-    alias l="ls -lah"
-    alias la="ls -lAh"
-    alias ll="ls -lh"
-fi
-
-# Better defaults
-alias grep="grep --color=auto"
-alias mkdir="mkdir -pv"
 
 # Key bindings
 bindkey -e  # Emacs mode (or use -v for vi mode)
 bindkey '^[[A' history-search-backward
 bindkey '^[[B' history-search-forward
 
-# Load local customizations if they exist
-[[ -f "$ZDOTDIR/.zshrc.local" ]] && source "$ZDOTDIR/.zshrc.local"
+# Extend
+[[ -f "$ZDOTDIR/aliases.zsh" ]] && source "$ZDOTDIR/aliases.zsh"
+[[ -f "$ZDOTDIR/functions.zsh" ]] && source "$ZDOTDIR/functions.zsh"

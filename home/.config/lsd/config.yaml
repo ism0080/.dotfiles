@@ -1,0 +1,32 @@
+# Enable icons
+icons:
+  when: auto
+  theme: fancy   # best-looking set
+  separator: "  "
+
+# Layout
+layout: grid
+
+# Display
+display: almost-all   # shows dotfiles except . and ..
+dereference: false
+
+# Sorting
+sorting:
+  column: name
+  reverse: false
+  dir-grouping: first
+
+# Size formatting
+size: short
+
+# Date
+date: relative   # shows "2h ago" style
+
+# Permissions
+permission: octal
+
+# Colors
+color:
+  when: auto
+  theme: default

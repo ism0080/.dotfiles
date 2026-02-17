@@ -24,3 +24,6 @@ backups/
 
 # Logs
 *.log
+
+.zsh_history
+.zcompdump

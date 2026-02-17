@@ -1,6 +1,8 @@
 # Homebrew Bundle for WSL
 # Core development tools and CLI utilities
 
+brew "zsh"
+
 # Version control and collaboration
 brew "git"
 brew "gh"              # GitHub CLI
@@ -20,6 +22,7 @@ brew "ripgrep"         # Fast grep alternative
 brew "fd"              # Fast find alternative
 brew "lsd"             # Modern ls with colors and icons
 brew "tree"            # Directory listing
+brew "yazi"
 
 # File operations
 brew "stow"            # Symlink manager
@@ -28,6 +31,9 @@ brew "stow"            # Symlink manager
 brew "jq"              # JSON processor
 brew "wget"
 brew "curl"
+brew "poppler"
+brew "ffmpeg"
+brew "resvg"
 
 # Language version manager
 brew "mise"            # Modern runtime version manager (replaces fnm, nvm, rbenv, pyenv, etc.)
