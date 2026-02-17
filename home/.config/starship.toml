@@ -1,0 +1,72 @@
+# Starship prompt configuration
+# https://starship.rs/config/
+
+# Get editor completions based on the config schema
+"$schema" = 'https://starship.rs/config-schema.json'
+
+# Timeout for starship commands
+command_timeout = 500
+
+# Add newline before prompt
+add_newline = true
+
+# Format
+format = """
+[┌─](bold green) $username$hostname$directory$git_branch$git_status
+[└─](bold green) $character"""
+
+[character]
+success_symbol = "[➜](bold green)"
+error_symbol = "[➜](bold red)"
+
+[username]
+style_user = "bold yellow"
+style_root = "bold red"
+format = "[$user]($style) "
+show_always = false
+
+[hostname]
+ssh_only = true
+format = "on [$hostname](bold blue) "
+
+[directory]
+truncation_length = 3
+truncate_to_repo = true
+format = "in [$path]($style)[$read_only]($read_only_style) "
+style = "bold cyan"
+
+[git_branch]
+format = "on [$symbol$branch]($style) "
+symbol = " "
+style = "bold purple"
+
+[git_status]
+format = '([\[$all_status$ahead_behind\]]($style) )'
+style = "bold red"
+conflicted = "🏳"
+up_to_date = "✓"
+untracked = "?"
+stashed = "$"
+modified = "!"
+staged = '+'
+renamed = "»"
+deleted = "✘"
+
+[nodejs]
+format = "via [⬢ $version](bold green) "
+detect_files = ["package.json", ".node-version"]
+detect_folders = ["node_modules"]
+
+[python]
+format = 'via [🐍 $version]($style) '
+style = "bold yellow"
+
+[rust]
+format = "via [⚙️ $version](bold red) "
+
+[docker_context]
+format = "via [🐋 $context](bold blue) "
+
+[cmd_duration]
+min_time = 500
+format = "took [$duration](bold yellow) "

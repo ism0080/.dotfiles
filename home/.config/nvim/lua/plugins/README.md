@@ -1,0 +1,10 @@
+-- Place your plugin configurations here
+-- Files in this directory are automatically loaded by lazy.nvim
+-- 
+-- Example plugin file structure:
+-- return {
+--   "plugin/name",
+--   config = function()
+--     -- plugin configuration
+--   end,
+-- }

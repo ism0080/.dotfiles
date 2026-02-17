@@ -1,0 +1,8 @@
+# Work-specific Git configuration
+# This file is included when working in the ~/work/ directory
+# Edit the includeIf path in the main config if your work dir is different
+
+[user]
+	name = YOUR_WORK_NAME
+	email = YOUR_WORK_EMAIL
+	# signingKey = ~/.ssh/id_ed25519_work.pub

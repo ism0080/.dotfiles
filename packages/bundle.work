@@ -1,0 +1,9 @@
+# Work-specific packages
+# Add work-related tools here
+
+# Example work tools (uncomment as needed):
+# brew "awscli"
+# brew "kubectl"
+# brew "terraform"
+# brew "docker"
+# brew "docker-compose"

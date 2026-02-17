@@ -1,0 +1,41 @@
+# Homebrew Bundle for WSL
+# Core development tools and CLI utilities
+
+# Version control and collaboration
+brew "git"
+brew "gh"              # GitHub CLI
+
+# Shell and terminal
+brew "zsh"
+brew "starship"        # Cross-shell prompt
+brew "tmux"            # Terminal multiplexer
+brew "zoxide"          # Smarter cd command
+
+# Editor and tools
+brew "neovim"
+
+# Search and navigation
+brew "fzf"             # Fuzzy finder
+brew "ripgrep"         # Fast grep alternative
+brew "fd"              # Fast find alternative
+brew "tree"            # Directory listing
+
+# File operations
+brew "stow"            # Symlink manager
+
+# Development utilities
+brew "jq"              # JSON processor
+brew "wget"
+brew "curl"
+
+# Language version managers
+brew "fnm"             # Fast Node Manager
+
+# Code quality
+brew "shellcheck"      # Shell script linter
+
+# Optional: Uncomment if needed
+# brew "docker"
+# brew "kubectl"
+# brew "terraform"
+# brew "awscli"

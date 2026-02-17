@@ -1,0 +1,455 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Colors for output
+readonly RED='\033[0;31m'
+readonly GREEN='\033[0;32m'
+readonly YELLOW='\033[0;33m'
+readonly BLUE='\033[0;34m'
+readonly CYAN='\033[0;36m'
+readonly RESET='\033[0m'
+readonly BOLD='\033[1m'
+
+# Script metadata
+readonly SCRIPT_NAME="dot"
+readonly VERSION="1.0.0"
+DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly DOTFILES_DIR
+
+# Configuration
+readonly PACKAGES_DIR="${DOTFILES_DIR}/packages"
+readonly HOME_DIR="${DOTFILES_DIR}/home"
+readonly SCRIPTS_DIR="${DOTFILES_DIR}/scripts"
+
+# Detect environment
+detect_environment() {
+    if grep -qi microsoft /proc/version 2>/dev/null; then
+        echo "wsl"
+    elif [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "win32" ]] || [[ "$OSTYPE" == "cygwin" ]]; then
+        echo "windows"
+    else
+        echo "unknown"
+    fi
+}
+
+readonly ENVIRONMENT=$(detect_environment)
+
+# Progress indicators
+CURRENT_STEP=0
+TOTAL_STEPS=0
+
+# Helper functions
+print_header() {
+    echo -e "\n${BOLD}${BLUE}==>${RESET} ${BOLD}$1${RESET}"
+}
+
+print_success() {
+    echo -e "${GREEN}✓${RESET} $1"
+}
+
+print_error() {
+    echo -e "${RED}✗${RESET} $1" >&2
+}
+
+print_warning() {
+    echo -e "${YELLOW}⚠${RESET} $1"
+}
+
+print_info() {
+    echo -e "${CYAN}ℹ${RESET} $1"
+}
+
+print_step() {
+    ((CURRENT_STEP++))
+    echo -e "\n${BOLD}[${CURRENT_STEP}/${TOTAL_STEPS}]${RESET} $1"
+}
+
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
+}
+
+confirm() {
+    local prompt="${1:-Continue?}"
+    local default="${2:-n}"
+    
+    if [[ "$default" == "y" ]]; then
+        prompt="$prompt [Y/n]: "
+    else
+        prompt="$prompt [y/N]: "
+    fi
+    
+    read -r -p "$prompt" response
+    
+    case "$response" in
+        [yY][eE][sS]|[yY]) return 0 ;;
+        [nN][oO]|[nN]) return 1 ;;
+        "")
+            if [[ "$default" == "y" ]]; then
+                return 0
+            else
+                return 1
+            fi
+            ;;
+        *) return 1 ;;
+    esac
+}
+
+# Installation functions for WSL
+install_homebrew_wsl() {
+    print_step "Installing Homebrew (WSL)"
+    
+    if command_exists brew; then
+        print_success "Homebrew is already installed"
+        return 0
+    fi
+    
+    print_info "Installing Homebrew..."
+    
+    if NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"; then
+        print_success "Homebrew installed successfully"
+        
+        # Configure Homebrew environment
+        print_info "Configuring Homebrew environment..."
+        eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+        print_success "Homebrew environment configured"
+    else
+        print_error "Homebrew installation failed"
+        return 1
+    fi
+}
+
+install_scoop_windows() {
+    print_step "Installing Scoop (Windows)"
+    
+    if command_exists scoop; then
+        print_success "Scoop is already installed"
+        return 0
+    fi
+    
+    print_info "Installing Scoop..."
+    print_warning "This requires PowerShell - please install manually if this fails"
+    print_info "Run in PowerShell: irm get.scoop.sh | iex"
+    
+    return 0
+}
+
+install_packages_wsl() {
+    print_step "Installing packages from Brewfile (WSL)"
+    
+    if [[ ! -f "${PACKAGES_DIR}/bundle" ]]; then
+        print_error "Brewfile not found at ${PACKAGES_DIR}/bundle"
+        return 1
+    fi
+    
+    print_info "Installing base packages..."
+    
+    if brew bundle --file="${PACKAGES_DIR}/bundle"; then
+        print_success "All packages installed successfully"
+    else
+        print_warning "Some packages failed to install"
+    fi
+    
+    # Work packages
+    if [[ -f "${PACKAGES_DIR}/bundle.work" ]] && confirm "Install work-specific packages?" "n"; then
+        print_info "Installing work packages..."
+        brew bundle --file="${PACKAGES_DIR}/bundle.work" || print_warning "Some work packages failed"
+    fi
+}
+
+install_packages_windows() {
+    print_step "Installing packages via Scoop (Windows)"
+    
+    if [[ ! -f "${PACKAGES_DIR}/scoopfile.json" ]]; then
+        print_warning "Scoopfile not found at ${PACKAGES_DIR}/scoopfile.json"
+        print_info "Create scoopfile.json to manage Windows packages"
+        return 0
+    fi
+    
+    print_info "Please install Scoop packages manually using the scoopfile.json"
+    print_info "See README for instructions"
+}
+
+symlink_configs() {
+    print_step "Creating symlinks for configuration files"
+    
+    if ! command_exists stow; then
+        print_error "GNU Stow is not installed"
+        print_info "Install it first: brew install stow"
+        return 1
+    fi
+    
+    local target_home
+    if [[ "$ENVIRONMENT" == "wsl" ]]; then
+        target_home="$HOME"
+    else
+        # For Windows, might need different logic
+        target_home="$HOME"
+    fi
+    
+    print_info "Symlinking from ${HOME_DIR} to ${target_home}..."
+    
+    if stow -R -v -d "${DOTFILES_DIR}" -t "${target_home}" home; then
+        print_success "Dotfiles stowed successfully"
+    else
+        print_error "Failed to stow dotfiles"
+        return 1
+    fi
+    
+    # Special handling for configs that need to be accessible from both WSL and Windows
+    if [[ "$ENVIRONMENT" == "wsl" ]]; then
+        setup_windows_symlinks
+    fi
+}
+
+setup_windows_symlinks() {
+    print_info "Setting up Windows-accessible config symlinks..."
+    
+    # Get Windows home directory
+    local win_home
+    win_home=$(wslpath "$(cmd.exe /c "echo %USERPROFILE%" 2>/dev/null | tr -d '\r')")
+    
+    if [[ -z "$win_home" ]]; then
+        print_warning "Could not determine Windows home directory"
+        return 0
+    fi
+    
+    print_info "Windows home: $win_home"
+    
+    # Create symlinks for shared configs (git, neovim)
+    local configs_to_share=("git" "nvim")
+    
+    for config in "${configs_to_share[@]}"; do
+        local wsl_config="${HOME}/.config/${config}"
+        local win_config="${win_home}/.config/${config}"
+        
+        if [[ -d "$wsl_config" ]]; then
+            mkdir -p "$(dirname "$win_config")"
+            
+            # Check if Windows symlink already exists
+            if [[ -L "$win_config" ]] || [[ -e "$win_config" ]]; then
+                print_info "Windows ${config} config already exists"
+            else
+                print_info "Creating Windows symlink for ${config}..."
+                # This might need to be done from PowerShell with admin rights
+                print_warning "Manual step: Create Windows symlink"
+                echo "  From PowerShell (as Admin):"
+                echo "  New-Item -ItemType SymbolicLink -Path \"$win_config\" -Target \"$wsl_config\""
+            fi
+        fi
+    done
+}
+
+setup_zsh_shell() {
+    print_step "Setting up Zsh shell"
+    
+    if ! command_exists zsh; then
+        print_warning "Zsh shell not installed, skipping setup"
+        return 0
+    fi
+    
+    local zsh_path
+    zsh_path=$(command -v zsh)
+    
+    # Add zsh to /etc/shells if needed
+    if ! grep -q "$zsh_path" /etc/shells 2>/dev/null; then
+        print_info "Adding Zsh to /etc/shells..."
+        echo "$zsh_path" | sudo tee -a /etc/shells >/dev/null
+    fi
+    
+    # Set zsh as default shell
+    if [[ "$SHELL" != "$zsh_path" ]]; then
+        print_info "Setting Zsh as default shell..."
+        if chsh -s "$zsh_path" 2>/dev/null; then
+            print_success "Default shell changed to Zsh"
+        else
+            print_warning "Could not change default shell (may need sudo)"
+        fi
+    else
+        print_success "Zsh is already the default shell"
+    fi
+}
+
+# Command functions
+cmd_init() {
+    print_header "Initializing dotfiles for WSL/Windows environment"
+    print_info "Environment: ${ENVIRONMENT}"
+    
+    if [[ "$ENVIRONMENT" == "wsl" ]]; then
+        TOTAL_STEPS=5
+        CURRENT_STEP=0
+        
+        install_homebrew_wsl || return 1
+        install_packages_wsl || return 1
+        symlink_configs || return 1
+        setup_zsh_shell || print_warning "Zsh setup failed (continuing)"
+        
+        print_header "WSL setup complete! 🎉"
+        print_info "Next steps:"
+        print_info "1. Edit home/.config/git/config with your email and name"
+        print_info "2. Run 'dot init-windows' from PowerShell to setup Windows side"
+        
+    elif [[ "$ENVIRONMENT" == "windows" ]]; then
+        print_warning "Running from Windows Git Bash"
+        print_info "For best results, run 'dot init' from WSL"
+        print_info "For Windows setup, see 'dot init-windows'"
+    else
+        print_error "Unknown environment"
+        return 1
+    fi
+}
+
+cmd_init_windows() {
+    print_header "Initializing Windows-side configuration"
+    
+    print_info "Windows setup requires:"
+    print_info "1. Install Scoop: irm get.scoop.sh | iex (in PowerShell)"
+    print_info "2. Install packages: scoop install git neovim"
+    print_info "3. Create config symlinks (see README)"
+    
+    print_warning "This script is designed to run in WSL"
+    print_info "Please follow the manual steps in README.md for Windows setup"
+}
+
+cmd_update() {
+    print_header "Updating dotfiles"
+    
+    # Pull latest changes
+    print_info "Pulling latest changes..."
+    if git -C "$DOTFILES_DIR" pull; then
+        print_success "Repository updated"
+    else
+        print_error "Failed to update repository"
+        return 1
+    fi
+    
+    # Update packages based on environment
+    if [[ "$ENVIRONMENT" == "wsl" ]] && confirm "Update Homebrew packages?" "y"; then
+        brew update && brew upgrade
+        print_success "Packages updated"
+    fi
+    
+    # Re-symlink dotfiles
+    if confirm "Re-stow dotfiles?" "y"; then
+        symlink_configs
+    fi
+}
+
+cmd_doctor() {
+    print_header "Running diagnostics"
+    
+    print_info "Environment: ${ENVIRONMENT}"
+    print_info "Dotfiles dir: ${DOTFILES_DIR}"
+    
+    local issues=0
+    
+    if [[ "$ENVIRONMENT" == "wsl" ]]; then
+        # Check Homebrew
+        if command_exists brew; then
+            print_success "Homebrew installed"
+        else
+            print_error "Homebrew not installed"
+            ((++issues))
+        fi
+    fi
+    
+    # Check Stow
+    if command_exists stow; then
+        print_success "GNU Stow installed"
+    else
+        print_error "GNU Stow not installed (required)"
+        ((++issues))
+    fi
+    
+    # Check key tools
+    local tools=("git" "nvim" "tmux" "zsh")
+    for tool in "${tools[@]}"; do
+        if command_exists "$tool"; then
+            print_success "$tool is available"
+        else
+            print_warning "$tool not installed"
+        fi
+    done
+    
+    # Check config files
+    if [[ -f "${HOME}/.config/git/config" ]] || [[ -L "${HOME}/.config/git/config" ]]; then
+        print_success "Git config linked"
+    else
+        print_warning "Git config not linked"
+    fi
+    
+    if [[ $issues -eq 0 ]]; then
+        print_header "All critical checks passed! ✨"
+    else
+        print_header "Found $issues critical issues"
+    fi
+}
+
+cmd_stow() {
+    symlink_configs
+}
+
+cmd_help() {
+    cat << EOF
+${BOLD}${SCRIPT_NAME}${RESET} - Dotfiles management for WSL/Windows
+
+${BOLD}USAGE:${RESET}
+    ${SCRIPT_NAME} <command> [options]
+
+${BOLD}COMMANDS:${RESET}
+    init              Initialize dotfiles (run in WSL)
+    init-windows      Show Windows setup instructions
+    update            Update dotfiles and packages
+    doctor            Run diagnostics
+    stow              Create/update symlinks
+    help              Show this help message
+
+${BOLD}ENVIRONMENT:${RESET}
+    Current: ${ENVIRONMENT}
+
+${BOLD}EXAMPLES:${RESET}
+    ${SCRIPT_NAME} init            # Initial setup in WSL
+    ${SCRIPT_NAME} update          # Update everything
+    ${SCRIPT_NAME} doctor          # Check installation
+
+EOF
+}
+
+# Main command dispatcher
+main() {
+    if [[ $# -eq 0 ]]; then
+        cmd_help
+        return 0
+    fi
+    
+    local command="$1"
+    shift
+    
+    case "$command" in
+        init)
+            cmd_init "$@"
+            ;;
+        init-windows)
+            cmd_init_windows "$@"
+            ;;
+        update)
+            cmd_update "$@"
+            ;;
+        doctor)
+            cmd_doctor "$@"
+            ;;
+        stow)
+            cmd_stow "$@"
+            ;;
+        help|--help|-h)
+            cmd_help
+            ;;
+        *)
+            print_error "Unknown command: $command"
+            echo "Run '${SCRIPT_NAME} help' for usage"
+            return 1
+            ;;
+    esac
+}
+
+main "$@"

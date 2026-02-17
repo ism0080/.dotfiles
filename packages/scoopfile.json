@@ -1,0 +1,206 @@
+{
+  "description": "Scoop packages for Windows side of WSL/Windows setup",
+  "comment": "Install with: scoop import scoopfile.json or scoop install <package>",
+  "note": "Git, PowerShell Core, and Starship can be installed via Scoop or official installers",
+  "buckets": [
+    "main",
+    "extras",
+    "java"
+  ],
+  "apps": [
+    {
+      "name": "7zip",
+      "source": "main",
+      "comment": "File archiver"
+    },
+    {
+      "name": "alacritty",
+      "source": "extras",
+      "comment": "GPU-accelerated terminal emulator"
+    },
+    {
+      "name": "charm-gum",
+      "source": "main",
+      "comment": "Shell script styling tool"
+    },
+    {
+      "name": "curl",
+      "source": "main",
+      "comment": "Command line HTTP client"
+    },
+    {
+      "name": "fd",
+      "source": "main",
+      "comment": "Fast alternative to find"
+    },
+    {
+      "name": "fzf",
+      "source": "main",
+      "comment": "Fuzzy finder"
+    },
+    {
+      "name": "gcc",
+      "source": "main",
+      "comment": "GNU Compiler Collection"
+    },
+    {
+      "name": "gh",
+      "source": "main",
+      "comment": "GitHub CLI"
+    },
+    {
+      "name": "glow",
+      "source": "main",
+      "comment": "Markdown renderer for terminal"
+    },
+    {
+      "name": "jq",
+      "source": "main",
+      "comment": "JSON processor"
+    },
+    {
+      "name": "lazydocker",
+      "source": "main",
+      "comment": "Docker TUI"
+    },
+    {
+      "name": "lazygit",
+      "source": "extras",
+      "comment": "Git TUI"
+    },
+    {
+      "name": "less",
+      "source": "main",
+      "comment": "Pager for viewing files"
+    },
+    {
+      "name": "lsd",
+      "source": "main",
+      "comment": "Modern ls replacement"
+    },
+    {
+      "name": "lua-language-server",
+      "source": "main",
+      "comment": "Lua LSP for Neovim"
+    },
+    {
+      "name": "neovim",
+      "source": "main",
+      "comment": "Modern vim-based editor"
+    },
+    {
+      "name": "nvm",
+      "source": "main",
+      "comment": "Node Version Manager"
+    },
+    {
+      "name": "openjdk",
+      "source": "java",
+      "comment": "Java Development Kit"
+    },
+    {
+      "name": "pnpm",
+      "source": "main",
+      "comment": "Fast Node package manager"
+    },
+    {
+      "name": "ripgrep",
+      "source": "main",
+      "comment": "Fast grep alternative"
+    },
+    {
+      "name": "scoop-search",
+      "source": "main",
+      "comment": "Better scoop search"
+    },
+    {
+      "name": "sudo",
+      "source": "main",
+      "comment": "Run commands as admin"
+    },
+    {
+      "name": "typos",
+      "source": "main",
+      "comment": "Spell checker for code"
+    },
+    {
+      "name": "unar",
+      "source": "main",
+      "comment": "Archive extraction utility"
+    },
+    {
+      "name": "yazi",
+      "source": "main",
+      "comment": "Terminal file manager"
+    },
+    {
+      "name": "zoxide",
+      "source": "main",
+      "comment": "Smart directory jumper"
+    }
+  ],
+  "optional_essentials": [
+    {
+      "name": "git",
+      "source": "main",
+      "comment": "Git version control (or install from git-scm.com)"
+    },
+    {
+      "name": "starship",
+      "source": "main",
+      "comment": "Modern shell prompt (or install from starship.rs)"
+    }
+  ],
+  "optional_work_tools": [
+    {
+      "name": "elixir",
+      "source": "main",
+      "comment": "Elixir language"
+    },
+    {
+      "name": "erlang",
+      "source": "main",
+      "comment": "Erlang runtime (required for Elixir)"
+    },
+    {
+      "name": "love",
+      "source": "extras",
+      "comment": "Lua game framework"
+    },
+    {
+      "name": "nswagstudio",
+      "source": "extras",
+      "comment": "API tooling for .NET"
+    },
+    {
+      "name": "nuget",
+      "source": "main",
+      "comment": ".NET package manager"
+    },
+    {
+      "name": "openapi-generator-cli",
+      "source": "main",
+      "comment": "OpenAPI code generator"
+    },
+    {
+      "name": "poppler",
+      "source": "main",
+      "comment": "PDF rendering library"
+    },
+    {
+      "name": "saml2aws",
+      "source": "main",
+      "comment": "AWS SAML authentication"
+    },
+    {
+      "name": "vcredist2022",
+      "source": "extras",
+      "comment": "Visual C++ Redistributable"
+    },
+    {
+      "name": "zig",
+      "source": "main",
+      "comment": "Zig programming language"
+    }
+  ]
+}

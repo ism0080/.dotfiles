@@ -1,0 +1,26 @@
+# Git ignore for dotfiles repository
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Sensitive information
+*.secret
+*.key
+.env.local
+
+# Package manager artifacts
+packages/failed_packages_*.txt
+
+# Backup files
+backups/
+
+# Logs
+*.log

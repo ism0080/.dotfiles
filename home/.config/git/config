@@ -1,0 +1,57 @@
+[user]
+	name = YOUR_NAME
+	email = YOUR_EMAIL
+	# signingKey = ~/.ssh/id_ed25519.pub
+
+[core]
+	editor = nvim
+	autocrlf = input
+	eol = lf
+
+[init]
+	defaultBranch = main
+
+[pull]
+	rebase = true
+
+[push]
+	default = current
+	autoSetupRemote = true
+
+[fetch]
+	prune = true
+
+[rebase]
+	autoStash = true
+	updateRefs = true
+
+[merge]
+	conflictStyle = diff3
+
+[diff]
+	colorMoved = default
+
+[alias]
+	st = status
+	co = checkout
+	br = branch
+	ci = commit
+	unstage = reset HEAD --
+	last = log -1 HEAD
+	lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+	amend = commit --amend --no-edit
+	
+# Conditional work configuration
+# Edit the path below to match your work directory
+[includeIf "gitdir:~/work/"]
+	path = ~/.config/git/work_config
+
+# Uncomment to enable GPG signing
+# [commit]
+# 	gpgSign = true
+# 
+# [tag]
+# 	gpgSign = true
+# 
+# [gpg]
+# 	format = ssh
