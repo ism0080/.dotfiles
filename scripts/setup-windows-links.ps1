@@ -31,6 +31,62 @@ $configsToLink = @(
     @{Name="PowerShell"; Source=".config/powershell/profile.ps1"; Target="Documents/PowerShell/Microsoft.PowerShell_profile.ps1"}
 )
 
+# Create backup directory
+$timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+$backupDir = Join-Path (Split-Path $PSScriptRoot -Parent) "backups\windows_$timestamp"
+$filesToBackup = @()
+
+# First pass: check for conflicts
+foreach ($config in $configsToLink) {
+    $targetPath = Join-Path $windowsHome $config.Target
+    
+    if (Test-Path $targetPath) {
+        $item = Get-Item $targetPath
+        if ($item.LinkType -ne "SymbolicLink") {
+            $filesToBackup += @{
+                Config = $config
+                TargetPath = $targetPath
+            }
+        }
+    }
+}
+
+# If there are files to backup, prompt user
+if ($filesToBackup.Count -gt 0) {
+    Write-Host ""
+    Write-Host "⚠ The following files will be replaced:" -ForegroundColor Yellow
+    foreach ($item in $filesToBackup) {
+        Write-Host "  $($item.TargetPath)" -ForegroundColor Gray
+    }
+    Write-Host ""
+    
+    $response = Read-Host "Create backups of existing files? [Y/n]"
+    if ($response -eq "" -or $response -match "^[Yy]") {
+        New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
+        
+        foreach ($item in $filesToBackup) {
+            $relativePath = $item.Config.Target -replace "^~/", ""
+            $backupPath = Join-Path $backupDir $relativePath
+            $backupParent = Split-Path $backupPath -Parent
+            
+            if ($backupParent -and -not (Test-Path $backupParent)) {
+                New-Item -ItemType Directory -Path $backupParent -Force | Out-Null
+            }
+            
+            try {
+                Copy-Item -Path $item.TargetPath -Destination $backupPath -Recurse -Force
+                Write-Host "  ✓ Backed up: $($item.Config.Name)" -ForegroundColor Green
+            } catch {
+                Write-Host "  ✗ Failed to backup $($item.Config.Name): $($_.Exception.Message)" -ForegroundColor Red
+                exit 1
+            }
+        }
+        
+        Write-Host ""
+        Write-Host "✓ Backups created in: $backupDir" -ForegroundColor Green
+    }
+}
+
 foreach ($config in $configsToLink) {
     $sourcePath = Join-Path $wslPath $config.Source
     $targetPath = Join-Path $windowsHome $config.Target
@@ -50,11 +106,12 @@ foreach ($config in $configsToLink) {
     if (Test-Path $targetPath) {
         if ((Get-Item $targetPath).LinkType -eq "SymbolicLink") {
             Write-Host "  ✓ Symlink already exists" -ForegroundColor Green
+            continue
         } else {
-            Write-Host "  ⚠ Target exists but is not a symlink" -ForegroundColor Yellow
-            Write-Host "    Please backup and remove: $targetPath"
+            # Remove existing file/directory to replace with symlink
+            Remove-Item -Path $targetPath -Recurse -Force
+            Write-Host "  ✓ Removed existing file/directory" -ForegroundColor Green
         }
-        continue
     }
     
     # Create parent directory if needed
