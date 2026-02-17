@@ -14,11 +14,6 @@
       "comment": "File archiver"
     },
     {
-      "name": "bun",
-      "source": "main",
-      "comment": "Fast all-in-one JavaScript runtime"
-    },
-    {
       "name": "curl",
       "source": "main",
       "comment": "Command line HTTP client"

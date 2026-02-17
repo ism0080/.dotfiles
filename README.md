@@ -217,6 +217,7 @@ node = "lts"  # Use Node.js LTS by default
 mise install node@20      # Install Node 20
 mise use node@20          # Use Node 20 in current directory
 mise use -g python@3.12   # Set Python 3.12 globally
+mise use -g bun@latest    # Install Bun globally
 mise current              # Show active versions
 ```
 
