@@ -286,9 +286,7 @@ cmd_init() {
         
         print_header "WSL setup complete! 🎉"
         print_info "Next steps:"
-        print_info "1. Edit home/.config/git/config with your email and name"
-        print_info "2. Run 'dot init-windows' from PowerShell to setup Windows side"
-        print_info "3. Install runtimes with mise (e.g., 'mise use -g bun@latest')"
+        print_info "1. Run 'dot init-windows' from PowerShell to setup Windows side"
         
     elif [[ "$ENVIRONMENT" == "windows" ]]; then
         print_warning "Running from Windows Git Bash"
