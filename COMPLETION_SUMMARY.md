@@ -70,10 +70,12 @@ dotfiles/
 │   ├── bundle                    # Homebrew packages (WSL)
 │   ├── bundle.work               # Work-specific packages
 │   ├── scoopfile.json            # Scoop packages (Windows)
-│   └── scoop-install.sh          # Reference for Scoop setup
+│   └── psmodules.txt             # PowerShell modules (Windows)
 │
 └── scripts/
-    └── setup-windows-links.ps1   # Creates Windows symlinks
+    ├── setup-windows.ps1         # Automated Windows setup
+    ├── setup-windows-links.ps1   # Creates Windows symlinks
+    └── install-psmodules.ps1     # PowerShell module installer
 ```
 
 ## What Was Built

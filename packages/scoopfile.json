@@ -14,16 +14,6 @@
       "comment": "File archiver"
     },
     {
-      "name": "alacritty",
-      "source": "extras",
-      "comment": "GPU-accelerated terminal emulator"
-    },
-    {
-      "name": "charm-gum",
-      "source": "main",
-      "comment": "Shell script styling tool"
-    },
-    {
       "name": "curl",
       "source": "main",
       "comment": "Command line HTTP client"
@@ -69,11 +59,6 @@
       "comment": "Git TUI"
     },
     {
-      "name": "less",
-      "source": "main",
-      "comment": "Pager for viewing files"
-    },
-    {
       "name": "lsd",
       "source": "main",
       "comment": "Modern ls replacement"
@@ -84,19 +69,14 @@
       "comment": "Lua LSP for Neovim"
     },
     {
+      "name": "mise",
+      "source": "main",
+      "comment": "Modern runtime version manager (replaces nvm, rbenv, pyenv, etc.)"
+    },
+    {
       "name": "neovim",
       "source": "main",
       "comment": "Modern vim-based editor"
-    },
-    {
-      "name": "nvm",
-      "source": "main",
-      "comment": "Node Version Manager"
-    },
-    {
-      "name": "openjdk",
-      "source": "java",
-      "comment": "Java Development Kit"
     },
     {
       "name": "pnpm",
@@ -109,24 +89,9 @@
       "comment": "Fast grep alternative"
     },
     {
-      "name": "scoop-search",
-      "source": "main",
-      "comment": "Better scoop search"
-    },
-    {
-      "name": "sudo",
-      "source": "main",
-      "comment": "Run commands as admin"
-    },
-    {
       "name": "typos",
       "source": "main",
       "comment": "Spell checker for code"
-    },
-    {
-      "name": "unar",
-      "source": "main",
-      "comment": "Archive extraction utility"
     },
     {
       "name": "yazi",
@@ -152,21 +117,6 @@
     }
   ],
   "optional_work_tools": [
-    {
-      "name": "elixir",
-      "source": "main",
-      "comment": "Elixir language"
-    },
-    {
-      "name": "erlang",
-      "source": "main",
-      "comment": "Erlang runtime (required for Elixir)"
-    },
-    {
-      "name": "love",
-      "source": "extras",
-      "comment": "Lua game framework"
-    },
     {
       "name": "nswagstudio",
       "source": "extras",
@@ -196,11 +146,6 @@
       "name": "vcredist2022",
       "source": "extras",
       "comment": "Visual C++ Redistributable"
-    },
-    {
-      "name": "zig",
-      "source": "main",
-      "comment": "Zig programming language"
     }
   ]
 }

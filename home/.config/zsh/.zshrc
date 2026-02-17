@@ -48,6 +48,11 @@ if command -v zoxide &> /dev/null; then
     eval "$(zoxide init zsh)"
 fi
 
+# Mise - Modern runtime version manager (if installed)
+if command -v mise &> /dev/null; then
+    eval "$(mise activate zsh)"
+fi
+
 # Aliases
 # Git
 alias g="git"
@@ -65,11 +70,6 @@ alias ..="cd .."
 alias ...="cd ../.."
 alias ....="cd ../../.."
 
-# List
-alias l="ls -lah"
-alias la="ls -lAh"
-alias ll="ls -lh"
-
 # Neovim
 alias v="nvim"
 alias vim="nvim"
@@ -78,11 +78,22 @@ alias vim="nvim"
 alias dots="cd ~/.dotfiles"
 
 # Modern replacements (if installed)
-if command -v eza &> /dev/null; then
+if command -v lsd &> /dev/null; then
+    alias ls="lsd"
+    alias l="lsd -la"
+    alias la="lsd -la"
+    alias ll="lsd -l"
+    alias tree="lsd --tree"
+elif command -v eza &> /dev/null; then
     alias ls="eza"
+    alias l="eza -la"
     alias la="eza -la"
     alias ll="eza -l"
     alias tree="eza --tree"
+else
+    alias l="ls -lah"
+    alias la="ls -lAh"
+    alias ll="ls -lh"
 fi
 
 # Better defaults

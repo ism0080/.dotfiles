@@ -159,10 +159,11 @@ brew "fd"
 ```
 
 **Windows (Scoop):**
-Use the reference in `packages/scoop-install.sh`:
-```bash
+Edit `packages/scoopfile.json` to add packages, then run:
+```powershell
+.\scripts\setup-windows.ps1
+# Or install individual package:
 scoop install ripgrep
-scoop install fd
 ```
 
 ### Git Configuration
@@ -201,6 +202,26 @@ return {
 }
 ```
 
+### Runtime Version Management with Mise
+
+This setup uses [mise](https://mise.jdx.dev/) for managing language runtimes (Node.js, Python, Ruby, etc.).
+
+**Global configuration:** `~/.mise.toml` (symlinked from dotfiles)
+```toml
+[tools]
+node = "lts"  # Use Node.js LTS by default
+```
+
+**Common commands:**
+```bash
+mise install node@20      # Install Node 20
+mise use node@20          # Use Node 20 in current directory
+mise use -g python@3.12   # Set Python 3.12 globally
+mise current              # Show active versions
+```
+
+See [MISE.md](MISE.md) for complete documentation.
+
 ### Shared Configs Between WSL and Windows
 
 Git and Neovim configs live in WSL and are accessible from Windows via symlinks:
@@ -212,8 +233,8 @@ Git and Neovim configs live in WSL and are accessible from Windows via symlinks:
 ```
 
 This creates:
-- `~/.config/git` → Points to WSL git config
-- `~/AppData/Local/nvim` → Points to WSL neovim config
+- `~/.gitconfig` → Points to WSL git config file
+- `~/AppData/Local/nvim` → Points to WSL neovim config directory
 - `~/Documents/PowerShell/Microsoft.PowerShell_profile.ps1` → Points to WSL PowerShell profile
 
 ### PowerShell Configuration
@@ -296,7 +317,8 @@ brew bundle --file=packages/bundle
 # Install directly with Scoop
 scoop install new-package
 
-# Document in packages/scoop-install.sh
+# Add to packages/scoopfile.json for tracking
+# Then run: .\scripts\setup-windows.ps1
 ```
 
 ### Testing Changes

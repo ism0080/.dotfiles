@@ -25,7 +25,7 @@ $windowsHome = $env:USERPROFILE
 
 # Configs to link
 $configsToLink = @(
-    @{Name="Git"; Source=".config/git"; Target=".config/git"},
+    @{Name="Git Config"; Source=".config/git/config"; Target=".gitconfig"},
     @{Name="Neovim"; Source=".config/nvim"; Target="AppData/Local/nvim"},
     @{Name="PowerShell"; Source=".config/powershell/profile.ps1"; Target="Documents/PowerShell/Microsoft.PowerShell_profile.ps1"}
 )
@@ -77,9 +77,9 @@ Write-Host ""
 Write-Host "Setup complete!" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Note: Shared configurations are now linked between WSL and Windows:" -ForegroundColor Yellow
-Write-Host "  1. Git config (~/.config/git/config)" -ForegroundColor Gray
-Write-Host "  2. Neovim config (~/.config/nvim/)" -ForegroundColor Gray
-Write-Host "  3. PowerShell profile (~/.config/powershell/profile.ps1)" -ForegroundColor Gray
+Write-Host "  1. Git config (~/.gitconfig)" -ForegroundColor Gray
+Write-Host "  2. Neovim config (~/AppData/Local/nvim/)" -ForegroundColor Gray
+Write-Host "  3. PowerShell profile (~/Documents/PowerShell/Microsoft.PowerShell_profile.ps1)" -ForegroundColor Gray
 Write-Host ""
 Write-Host "Install required tools via Scoop if not already installed:" -ForegroundColor Yellow
 Write-Host "  scoop install git neovim pwsh starship" -ForegroundColor Gray

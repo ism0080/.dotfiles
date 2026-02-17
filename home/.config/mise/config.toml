@@ -1,0 +1,32 @@
+# Mise configuration file
+# This file defines the tools and runtime versions to install
+# See: https://mise.jdx.dev/
+
+# Node.js - using LTS version
+[tools]
+node = "lts"           # Latest LTS version
+
+# You can specify exact versions:
+# node = "20.11.0"
+# python = "3.12.0"
+# ruby = "3.3.0"
+# go = "1.22.0"
+
+# Or version prefixes:
+# node = "20"          # Latest 20.x
+# python = "3.11"      # Latest 3.11.x
+
+# Uncomment tools you need:
+# python = "latest"
+# ruby = "latest"
+# go = "latest"
+# rust = "latest"
+# java = "21"
+# php = "8.3"
+# deno = "latest"
+# bun = "latest"
+
+# Environment variables can be set here
+# [env]
+# NODE_ENV = "development"
+# EDITOR = "nvim"

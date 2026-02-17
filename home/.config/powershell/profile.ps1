@@ -6,6 +6,8 @@ $env:EDITOR = "nvim"
 $env:VISUAL = "nvim"
 $env:GH_DASH_CONFIG = "$HOME\.gh\dash\config.yml"
 
+Set-Alias grep findstr
+
 # PSReadLine configuration for better command line editing
 if (Get-Module -ListAvailable -Name PSReadLine) {
     Import-Module PSReadLine
@@ -26,6 +28,11 @@ if (Get-Command starship -ErrorAction SilentlyContinue) {
 # Zoxide (if installed)
 if (Get-Command zoxide -ErrorAction SilentlyContinue) {
     Invoke-Expression (& { (zoxide init powershell | Out-String) })
+}
+
+# Mise - Modern runtime version manager (if installed)
+if (Get-Command mise -ErrorAction SilentlyContinue) {
+    Invoke-Expression (& { (mise activate powershell | Out-String) })
 }
 
 # FZF Integration (if PSFzf module is available)
@@ -171,7 +178,23 @@ function Reload-Profile {
         }
     }
 }
-Set-Alias -Name rp -Value Reload-Profile
+Set-Alias -Name reload -Value Reload-Profile
+
+function vs {
+	param (
+		[Parameter(Mandatory = $true)]
+		[ValidateSet('19', '22')]
+		[string]$Version
+	)
+	$2022 = "C:\Program Files\Microsoft Visual Studio\2022\Professional\Common7\IDE\devenv.exe"
+	$2019 = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\Common7\IDE\devenv.exe"
+	$slnPath = Get-ChildItem -Filter *.sln | Select-Object -ExpandProperty FullName
+	if ($Version -eq '22') {
+		& $2022 $slnPath
+	} elseif ($Version -eq '19') {
+		& $2019 $slnPath
+	}
+}
 
 # Compute file hashes
 function md5 { Get-FileHash -Algorithm MD5 $args }

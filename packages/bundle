@@ -18,6 +18,7 @@ brew "neovim"
 brew "fzf"             # Fuzzy finder
 brew "ripgrep"         # Fast grep alternative
 brew "fd"              # Fast find alternative
+brew "lsd"             # Modern ls with colors and icons
 brew "tree"            # Directory listing
 
 # File operations
@@ -28,14 +29,10 @@ brew "jq"              # JSON processor
 brew "wget"
 brew "curl"
 
-# Language version managers
-brew "fnm"             # Fast Node Manager
+# Language version manager
+brew "mise"            # Modern runtime version manager (replaces fnm, nvm, rbenv, pyenv, etc.)
 
 # Code quality
 brew "shellcheck"      # Shell script linter
 
-# Optional: Uncomment if needed
-# brew "docker"
-# brew "kubectl"
-# brew "terraform"
-# brew "awscli"
+brew "awscli"

@@ -1,0 +1,24 @@
+# Global mise configuration
+# This is the global config that applies to all directories
+# Project-specific configs can override these settings
+
+[tools]
+# Default global tools
+node = "lts"
+
+# Uncomment other runtimes as needed:
+# python = "3.12"
+# ruby = "3.3"
+# go = "1.22"
+
+[settings]
+# Automatically install missing tools when entering a directory
+experimental = true
+yes = false  # Don't auto-install without confirmation
+
+# Use symlinks for shims (faster)
+legacy_version_file = true  # Support .nvmrc, .node-version, etc.
+
+[env]
+# Global environment variables
+_.file = ".env"  # Load .env file if present in project root
