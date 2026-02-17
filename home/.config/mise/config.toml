@@ -5,6 +5,10 @@
 # Node.js - using LTS version
 [tools]
 node = "lts"           # Latest LTS version
+bun = "latest"
+dotnet = "latest"
+go = "latest"
+fnox = "latest"
 
 # You can specify exact versions:
 # node = "20.11.0"

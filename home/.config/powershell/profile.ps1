@@ -42,6 +42,11 @@ if (Get-Module -ListAvailable -Name PSFzf) {
     Set-PSReadLineKeyHandler -Key Tab -ScriptBlock { Invoke-FzfTabCompletion }
 }
 
+# Fnox - Secrets manager (if installed)
+if (Get-Command fnox -ErrorAction SilentlyContinue) {
+    Invoke-Expression (& { (fnox activate powershell | Out-String) })
+}
+
 # Aliases
 # Git
 function g { git @args }

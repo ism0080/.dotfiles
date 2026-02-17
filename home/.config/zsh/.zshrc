@@ -53,6 +53,11 @@ if command -v mise &> /dev/null; then
     eval "$(mise activate zsh)"
 fi
 
+# fnox - Secrets manager
+if command -v fnox &> /dev/null; then
+    eval "$(fnox activate zsh)"
+fi
+
 # Aliases
 # Git
 alias g="git"
