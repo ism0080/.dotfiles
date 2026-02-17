@@ -157,6 +157,31 @@ install_packages_wsl() {
     fi
 }
 
+install_wsl_notify_send() {
+    print_step "Installing wsl-notify-send (WSL notifications)"
+    
+    # Check if already installed
+    if command_exists wsl-notify-send.exe; then
+        print_success "wsl-notify-send is already installed"
+        return 0
+    fi
+    
+    print_info "Installing wsl-notify-send for Windows notifications..."
+    
+    local install_script="${SCRIPTS_DIR}/install-wsl-notify-send.sh"
+    if [[ ! -f "$install_script" ]]; then
+        print_error "Install script not found: $install_script"
+        return 1
+    fi
+    
+    if bash "$install_script"; then
+        print_success "wsl-notify-send installed successfully"
+    else
+        print_warning "wsl-notify-send installation failed (non-critical)"
+        return 0
+    fi
+}
+
 install_packages_windows() {
     print_step "Installing packages via Scoop (Windows)"
     
@@ -283,11 +308,12 @@ cmd_init() {
         return 1
     fi
     
-    TOTAL_STEPS=5
+    TOTAL_STEPS=6
     CURRENT_STEP=0
     
     install_homebrew_wsl || return 1
     install_packages_wsl || return 1
+    install_wsl_notify_send || print_warning "wsl-notify-send installation failed (continuing)"
     symlink_configs || return 1
     setup_zsh_shell || print_warning "Zsh setup failed (continuing)"
     

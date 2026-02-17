@@ -25,8 +25,9 @@ $windowsHome = $env:USERPROFILE
 
 # Configs to link
 $configsToLink = @(
-    @{Name="Git Config"; Source=".config/git/config"; Target=".gitconfig"},
+    @{Name="Git Config"; Source=".config/git/config"; Target="~/.gitconfig"},
     @{Name="Neovim"; Source=".config/nvim"; Target="AppData/Local/nvim"},
+    @{Name="Opencode"; Source=".config/opencode"; Target="~/.config/opencode"},
     @{Name="PowerShell"; Source=".config/powershell/profile.ps1"; Target="Documents/PowerShell/Microsoft.PowerShell_profile.ps1"}
 )
 
