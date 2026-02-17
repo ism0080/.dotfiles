@@ -4,11 +4,12 @@
 # Environment variables
 $env:EDITOR = "nvim"
 $env:VISUAL = "nvim"
+$env:GH_DASH_CONFIG = "$HOME\.gh\dash\config.yml"
 
 # PSReadLine configuration for better command line editing
 if (Get-Module -ListAvailable -Name PSReadLine) {
     Import-Module PSReadLine
-    Set-PSReadLineOption -EditMode Emacs
+    Set-PSReadLineOption -EditMode Windows
     Set-PSReadLineOption -PredictionSource History
     Set-PSReadLineOption -PredictionViewStyle ListView
     Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete
@@ -27,9 +28,11 @@ if (Get-Command zoxide -ErrorAction SilentlyContinue) {
     Invoke-Expression (& { (zoxide init powershell | Out-String) })
 }
 
-# FNM - Fast Node Manager (if installed)
-if (Get-Command fnm -ErrorAction SilentlyContinue) {
-    fnm env --use-on-cd | Out-String | Invoke-Expression
+# FZF Integration (if PSFzf module is available)
+if (Get-Module -ListAvailable -Name PSFzf) {
+    Import-Module PSFzf
+    Set-PsFzfOption -PSReadlineChordProvider 'Ctrl+f' -PSReadlineChordReverseHistory 'Ctrl+r'
+    Set-PSReadLineKeyHandler -Key Tab -ScriptBlock { Invoke-FzfTabCompletion }
 }
 
 # Aliases
@@ -50,7 +53,13 @@ function ... { Set-Location ..\.. }
 function .... { Set-Location ..\..\.. }
 
 # List with color (using modern tools if available)
-if (Get-Command eza -ErrorAction SilentlyContinue) {
+if (Get-Command lsd -ErrorAction SilentlyContinue) {
+    Set-Alias ls lsd
+    Set-Alias l lsd
+    function ll { lsd -l @args }
+    function la { lsd -la @args }
+    function tree { lsd --tree @args }
+} elseif (Get-Command eza -ErrorAction SilentlyContinue) {
     function ls { eza @args }
     function la { eza -la @args }
     function ll { eza -l @args }
@@ -61,20 +70,87 @@ if (Get-Command eza -ErrorAction SilentlyContinue) {
 }
 
 # Neovim
-function n { nvim @args }
+Set-Alias n nvim
 function vim { nvim @args }
+
+# LazyGit and LazyDocker
+if (Get-Command lazygit -ErrorAction SilentlyContinue) {
+    Set-Alias lg lazygit
+}
+if (Get-Command lazydocker -ErrorAction SilentlyContinue) {
+    Set-Alias ld lazydocker
+}
 
 # Dotfiles
 function dots { Set-Location ~/.dotfiles }
+
+# Common directories
+function dev { Set-Location "C:\dev" }
+function home { Set-Location $HOME }
+function profile { nvim $PROFILE }
 
 # WSL integration
 function wsl-home { Set-Location \\wsl$\Ubuntu\home\$env:USERNAME }
 function wsl { wsl.exe @args }
 
+# Utility functions
+function rmf { Remove-Item -Recurse -Force @args }
+function reload { . $PROFILE }
+
+# Network utilities
+function myip { curl 'https://api.ipify.org' }
+function weather { curl 'wttr.in' }
+
 # Better directory listing
 function which($command) {
     Get-Command -Name $command -ErrorAction SilentlyContinue |
         Select-Object -ExpandProperty Path -ErrorAction SilentlyContinue
+}
+
+# Yazi file manager integration
+function yy {
+    $tmp = [System.IO.Path]::GetTempFileName()
+    yazi $args --cwd-file="$tmp"
+    $cwd = Get-Content -Path $tmp
+    if (-not [String]::IsNullOrEmpty($cwd) -and $cwd -ne $PWD.Path) {
+        Set-Location -LiteralPath $cwd
+    }
+    Remove-Item -Path $tmp
+}
+
+# FZF helper functions (if FZF is available)
+if (Get-Command fzf -ErrorAction SilentlyContinue) {
+    # Interactive cd to directory
+    function icd {
+        Get-ChildItem . -Recurse -Attributes Directory -Depth 10 | Where-Object {
+            $folder = $_
+            $pathParts = $folder.FullName -split '\\'
+            -not ($pathParts | Where-Object { $_ -eq 'node_modules' -or $_.StartsWith('.') })
+        } | Invoke-Fzf | Set-Location
+    }
+
+    # Open directory in VS Code
+    function icode {
+        Get-ChildItem . -Recurse -Attributes Directory -Depth 10 |
+            Where-Object { $_.FullName -notmatch "\\node_modules\\" } |
+            Invoke-Fzf | ForEach-Object { code $_ }
+    }
+
+    # Open file in nvim
+    function inv {
+        Get-ChildItem . -Recurse -Attributes !Directory -Depth 10 |
+            Where-Object { $_.FullName -notmatch "\\node_modules\\" } |
+            Invoke-Fzf | ForEach-Object { nvim $_ }
+    }
+}
+
+# Prune local git branches (keeps main, master, develop, and release branches)
+function prune_branches {
+    git branch |
+    ForEach-Object { $_.Trim().Replace('* ', '') } |
+    Where-Object { $_ -and ($_ -notin @('master','main','develop')) } |
+    Where-Object { $_ -notmatch '^release' } |
+    ForEach-Object { git branch -D $_ }
 }
 
 # Quick edit of profile

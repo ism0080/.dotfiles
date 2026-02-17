@@ -48,11 +48,6 @@ if command -v zoxide &> /dev/null; then
     eval "$(zoxide init zsh)"
 fi
 
-# FNM - Fast Node Manager (if installed)
-if command -v fnm &> /dev/null; then
-    eval "$(fnm env --use-on-cd)"
-fi
-
 # Aliases
 # Git
 alias g="git"

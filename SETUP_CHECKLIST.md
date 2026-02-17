@@ -107,23 +107,28 @@ irm get.scoop.sh | iex
 - [ ] Scoop installed successfully
 - [ ] Test with: `scoop --version`
 
-### 2. Install Essential Packages
-```powershell
-scoop install git
-scoop install neovim
-scoop install ripgrep
-scoop install fd
-scoop install fzf
-```
-
-- [ ] Git installed on Windows
-- [ ] Neovim installed on Windows
-- [ ] CLI tools installed
-
-### 3. Create Symlinks to WSL Configs
-Open PowerShell **as Administrator**:
+### 2. Run Automated Windows Setup
+Navigate to dotfiles directory and run:
 ```powershell
 cd C:\dev\projects\dotfiles  # or wherever you cloned it
+.\scripts\setup-windows.ps1
+```
+
+This will:
+- Install all Scoop packages from `scoopfile.json`
+- Install PowerShell modules (PSReadLine, PSFzf, posh-git, Terminal-Icons)
+- Create symlinks (requires running as Administrator for this step)
+
+If not running as admin, you'll be prompted to run the symlink script separately.
+
+- [ ] Scoop packages installed (lsd, fzf, gh, lazygit, etc.)
+- [ ] PowerShell modules installed
+- [ ] Proceed to next step for symlinks if needed
+
+### 3. Create Symlinks (if not done in step 2)
+Open PowerShell **as Administrator** and run:
+```powershell
+cd C:\dev\projects\dotfiles
 .\scripts\setup-windows-links.ps1
 ```
 

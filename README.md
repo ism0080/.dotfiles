@@ -43,17 +43,25 @@ cd ~/.dotfiles
 # 1. Install Scoop (in PowerShell)
 irm get.scoop.sh | iex
 
-# 2. Install packages
-scoop install git neovim pwsh ripgrep fd fzf starship
-
-# 3. Create symlinks to WSL configs (run as Administrator)
+# 2. Run automated setup (installs packages and modules)
 cd C:\dev\projects\dotfiles
-.\scripts\setup-windows-links.ps1
+.\scripts\setup-windows.ps1
 
-# This will symlink:
-# - Git config
-# - Neovim config
-# - PowerShell profile
+# This will:
+# - Install Scoop packages from scoopfile.json
+# - Install PowerShell modules (PSReadLine, PSFzf, posh-git, Terminal-Icons)
+# - Create symlinks (requires Administrator)
+
+# Or, install components individually:
+
+# Install Scoop packages only
+.\scripts\setup-windows.ps1 -SkipModules -SkipSymlinks
+
+# Install PowerShell modules only
+.\scripts\install-psmodules.ps1
+
+# Create symlinks only (run as Administrator)
+.\scripts\setup-windows-links.ps1
 ```
 
 ## Repository Structure
@@ -77,10 +85,12 @@ cd C:\dev\projects\dotfiles
 ├── packages/
 │   ├── bundle             # Homebrew packages (WSL)
 │   ├── bundle.work        # Work-specific Homebrew packages
-│   ├── scoopfile.json     # Scoop packages manifest
-│   └── scoop-install.sh   # Scoop installation reference
+│   ├── scoopfile.json     # Scoop packages manifest (Windows)
+│   └── psmodules.txt      # PowerShell modules list (Windows)
 └── scripts/
-    └── setup-windows-links.ps1  # Windows symlink helper
+    ├── setup-windows.ps1        # Automated Windows setup
+    ├── setup-windows-links.ps1  # Windows symlink helper
+    └── install-psmodules.ps1    # PowerShell module installer
 
 ```
 
