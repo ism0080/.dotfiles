@@ -516,6 +516,141 @@ cmd_stow() {
     symlink_configs
 }
 
+cmd_validate() {
+    print_header "Validating package sync between WSL and Windows"
+    
+    local bundle_file="${PACKAGES_DIR}/bundle"
+    local scoop_file="${PACKAGES_DIR}/scoopfile.json"
+    local issues=0
+    
+    if [[ ! -f "$bundle_file" ]]; then
+        print_error "Bundle file not found at $bundle_file"
+        ((++issues))
+    fi
+    
+    if [[ ! -f "$scoop_file" ]]; then
+        print_error "Scoopfile not found at $scoop_file"
+        ((++issues))
+    fi
+    
+    if [[ $issues -eq 0 ]]; then
+        print_info "Comparing packages..."
+        echo ""
+        
+        local brew_apps=()
+        while IFS= read -r line; do
+            if [[ "$line" =~ brew[[:space:]]+\"([^\"]+)\" ]]; then
+                brew_apps+=("${BASH_REMATCH[1]}")
+            fi
+        done < "$bundle_file"
+        
+        print_info "Checking common tools availability:"
+        local common_tools=("git" "gh" "nvim" "fzf" "ripgrep" "fd" "jq" "zoxide" "mise" "lsd" "yazi" "starship" "lazygit" "lazydocker")
+        
+        for tool in "${common_tools[@]}"; do
+            local in_brew=false
+            for brew_app in "${brew_apps[@]}"; do
+                if [[ "$brew_app" == "$tool" ]]; then
+                    in_brew=true
+                    break
+                fi
+            done
+            
+            if command_exists "$tool"; then
+                print_success "$tool - installed"
+            else
+                print_warning "$tool - not installed"
+            fi
+        done
+        
+        echo ""
+        print_header "Validation complete"
+    fi
+}
+
+cmd_backup() {
+    print_header "Backing up current configurations"
+    
+    local backup_dir="${DOTFILES_DIR}/backups/$(date +%Y%m%d_%H%M%S)"
+    local backed_up=0
+    
+    local configs_to_backup=(
+        "$HOME/.gitconfig"
+        "$HOME/.config/git/config"
+        "$HOME/.config/nvim"
+        "$HOME/.config/zsh/.zshrc"
+        "$HOME/.config/tmux/tmux.conf"
+        "$HOME/.config/starship.toml"
+    )
+    
+    for config in "${configs_to_backup[@]}"; do
+        if [[ -e "$config" ]]; then
+            if [[ ! -d "$backup_dir" ]]; then
+                mkdir -p "$backup_dir"
+            fi
+            
+            local name=$(basename "$config")
+            print_info "Backing up $name..."
+            
+            if cp -r "$config" "${backup_dir}/${name}" 2>/dev/null; then
+                ((++backed_up))
+                print_success "Backed up $name"
+            else
+                print_error "Failed to backup $name"
+            fi
+        fi
+    done
+    
+    if [[ $backed_up -gt 0 ]]; then
+        print_header "Backup complete: $backed_up items saved to $backup_dir"
+    else
+        print_info "No existing configs found to backup"
+    fi
+}
+
+cmd_edit() {
+    local config="${1:-}"
+    
+    if [[ -z "$config" ]]; then
+        print_info "Available configs to edit:"
+        echo "  git      - Git configuration"
+        echo "  nvim     - Neovim configuration"
+        echo "  zsh      - Zsh configuration"
+        echo "  aliases  - Zsh aliases"
+        echo "  starship - Starship prompt"
+        echo "  tmux     - Tmux configuration"
+        echo "  mise     - Mise configuration"
+        echo ""
+        print_info "Usage: dot edit <config>"
+        return 0
+    fi
+    
+    local config_path=""
+    case "${config,,}" in
+        git)     config_path="${HOME_DIR}/.config/git/config" ;;
+        nvim)    config_path="${HOME_DIR}/.config/nvim/init.lua" ;;
+        zsh)     config_path="${HOME_DIR}/.config/zsh/.zshrc" ;;
+        aliases) config_path="${HOME_DIR}/.config/zsh/aliases.zsh" ;;
+        starship) config_path="${HOME_DIR}/.config/starship.toml" ;;
+        tmux)    config_path="${HOME_DIR}/.config/tmux/tmux.conf" ;;
+        mise)    config_path="${HOME_DIR}/.mise.toml" ;;
+        *)
+            print_error "Unknown config: $config"
+            print_info "Available: git, nvim, zsh, aliases, starship, tmux, mise"
+            return 1
+            ;;
+    esac
+    
+    if [[ -f "$config_path" ]]; then
+        local editor="${EDITOR:-nvim}"
+        print_info "Opening $config_path with $editor..."
+        "$editor" "$config_path"
+    else
+        print_error "Config file not found: $config_path"
+        return 1
+    fi
+}
+
 cmd_help() {
     cat << EOF
 ${BOLD}${SCRIPT_NAME}${RESET} - Dotfiles management for WSL
@@ -528,6 +663,9 @@ ${BOLD}COMMANDS (WSL):${RESET}
     update            Update Homebrew packages and re-stow configs
     doctor            Run WSL diagnostics
     stow              Create/update symlinks
+    validate          Check package sync between WSL and Windows
+    backup            Backup current configurations
+    edit <config>     Open a config file for editing
     help              Show this help message
     
     init-windows      Show Windows setup instructions
@@ -536,9 +674,12 @@ ${BOLD}WINDOWS COMMANDS:${RESET}
     For Windows, use the PowerShell wrapper instead:
     
     cd C:\\dev\\projects\\dotfiles
-    .\\dot.ps1 init-windows    # Setup Windows packages and configs
-    .\\dot.ps1 update          # Update Scoop and PowerShell modules
-    .\\dot.ps1 doctor          # Check Windows installation
+    .\\dot.ps1 init              # Setup Windows packages and configs
+    .\\dot.ps1 update            # Update Scoop and PowerShell modules
+    .\\dot.ps1 doctor            # Check Windows installation
+    .\\dot.ps1 validate          # Check WSL/Windows package sync
+    .\\dot.ps1 backup            # Backup current configs
+    .\\dot.ps1 edit git          # Edit git config
 
 ${BOLD}ENVIRONMENT:${RESET}
     Current: ${ENVIRONMENT}
@@ -549,6 +690,8 @@ ${BOLD}EXAMPLES:${RESET}
     ${SCRIPT_NAME} update          # Update WSL packages
     ${SCRIPT_NAME} doctor          # Check WSL installation
     ${SCRIPT_NAME} stow            # Re-create symlinks
+    ${SCRIPT_NAME} edit nvim       # Edit neovim config
+    ${SCRIPT_NAME} backup          # Backup current configs
 
 EOF
 }
@@ -578,6 +721,15 @@ main() {
             ;;
         stow)
             cmd_stow "$@"
+            ;;
+        validate)
+            cmd_validate "$@"
+            ;;
+        backup)
+            cmd_backup "$@"
+            ;;
+        edit)
+            cmd_edit "$@"
             ;;
         help|--help|-h)
             cmd_help

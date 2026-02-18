@@ -94,6 +94,50 @@ cd C:\dev\projects\dotfiles
 
 ```
 
+### How GNU Stow Works
+
+This repository uses [GNU Stow](https://www.gnu.org/software/stow/) for symlink management. Understanding how it works helps you add new configs:
+
+**Directory Structure:**
+```
+dotfiles/
+└── home/              # Stow package directory (named "home")
+    └── .config/       # Mirrors target structure
+        ├── git/       # Will be symlinked to ~/.config/git/
+        └── nvim/      # Will be symlinked to ~/.config/nvim/
+```
+
+**How Stowing Works:**
+1. Stow looks at the `home/` directory as a "package"
+2. For each file/directory inside `home/`, it creates a symlink in `$HOME`
+3. Example: `home/.config/git/config` → `$HOME/.config/git/config`
+
+**Adding a New Config:**
+```bash
+# 1. Create the directory in home/
+mkdir -p home/.config/new-tool
+
+# 2. Add your config files
+cp ~/.config/new-tool/config.toml home/.config/new-tool/
+
+# 3. Re-stow to create symlinks
+./dot stow
+```
+
+**Stow Command Used:**
+```bash
+stow -R -v -d "$DOTFILES_DIR" -t "$HOME" home
+# -R = Restow (remove and recreate)
+# -v = Verbose
+# -d = Set stow directory (where packages live)
+# -t = Set target directory (where symlinks go)
+```
+
+**Important Notes:**
+- Existing files are backed up before stowing (you'll be prompted)
+- Never edit files in `~/.config/*` directly - they're symlinks to the dotfiles repo
+- Edit files in `home/.config/*` instead, then re-stow
+
 ## The `dot` Command
 
 The `dot` command manages your dotfiles installation and updates.
@@ -147,6 +191,30 @@ dot stow
 ```
 Re-creates symlinks from `home/` directory to your home directory (`~`).
 
+#### `dot validate` - Check Package Sync
+```bash
+dot validate
+```
+Validates that common tools are available in both WSL and Windows package manifests.
+
+#### `dot backup` - Backup Configs
+```bash
+dot backup
+```
+Creates a timestamped backup of current configuration files in `backups/`.
+
+#### `dot edit` - Quick Config Editing
+```bash
+dot edit git      # Edit git config
+dot edit nvim     # Edit neovim config
+dot edit zsh      # Edit zsh config
+dot edit aliases  # Edit zsh aliases
+dot edit starship # Edit starship prompt
+dot edit tmux     # Edit tmux config
+dot edit mise     # Edit mise config
+```
+Opens the specified config file in your editor ($EDITOR or nvim).
+
 ## Configuration
 
 ### Package Management
@@ -183,6 +251,40 @@ scoop install ripgrep
 ```
 
 The work config automatically applies to repositories in `~/work/` directory (configurable via `includeIf` in main config).
+
+#### Git Aliases
+
+Built-in git aliases (use as `git <alias>`):
+
+| Alias | Command | Description |
+|-------|---------|-------------|
+| `st` | `status` | Show working tree status |
+| `co` | `checkout` | Switch branches |
+| `br` | `branch` | List/create branches |
+| `ci` | `commit` | Commit changes |
+| `d` | `diff` | Show differences |
+| `ds` | `diff --staged` | Show staged differences |
+| `lg` | (custom log) | Pretty graph log |
+| `lol` | `log --oneline --graph --decorate` | Compact log |
+| `last` | `log -1 HEAD` | Show last commit |
+| `amend` | `commit --amend --no-edit` | Amend without editing message |
+| `unstage` | `reset HEAD --` | Unstage files |
+| `undo` | `reset --soft HEAD~1` | Undo last commit (keep changes) |
+| `redo` | `reset 'HEAD@{1}'` | Redo undone commit |
+| `wip` | (custom) | Commit all changes as "WIP" |
+| `nowip` | (custom) | Undo WIP commit |
+
+Shell convenience aliases (zsh/PowerShell):
+- `g` → `git`
+- `gs` → `git status`
+- `ga` → `git add`
+- `gc` → `git commit`
+- `gp` → `git push`
+- `gl` → `git pull`
+- `gco` → `git checkout`
+- `gd` → `git diff`
+- `glog` → `git log --oneline --graph --decorate`
+- `lg` → `lazygit` (if installed)
 
 ### Neovim Configuration
 

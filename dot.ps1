@@ -40,10 +40,19 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-# Get the script directory
 $DotfilesDir = $PSScriptRoot
 
-# Colors for output
+function Get-WSLDistro {
+    $distro = $env:WSL_DISTRO_NAME
+    if (-not $distro -and (Get-Command wsl -ErrorAction SilentlyContinue)) {
+        $distro = (wsl -l -q 2>$null | Select-Object -First 1).Trim()
+    }
+    return $distro
+}
+
+$WSLDistro = Get-WSLDistro
+if (-not $WSLDistro) { $WSLDistro = "Ubuntu" }
+
 function Write-ColorOutput {
     param(
         [string]$Message,
@@ -296,9 +305,8 @@ switch ($Command.ToLower()) {
         Write-Info ""
         Write-Info "To run WSL init:"
         
-        # Try to detect WSL
         if (Get-Command wsl -ErrorAction SilentlyContinue) {
-            Write-Info "  wsl -d Ubuntu -e bash -c 'cd /mnt/c/dev/projects/dotfiles && ./dot init'"
+            Write-Info "  wsl -d $WSLDistro -e bash -c 'cd /mnt/c/dev/projects/dotfiles && ./dot init'"
         } else {
             Write-Info "  Run './dot init' from within WSL"
         }
@@ -311,7 +319,7 @@ switch ($Command.ToLower()) {
         Write-Info "To run stow:"
         
         if (Get-Command wsl -ErrorAction SilentlyContinue) {
-            Write-Info "  wsl -d Ubuntu -e bash -c 'cd /mnt/c/dev/projects/dotfiles && ./dot stow'"
+            Write-Info "  wsl -d $WSLDistro -e bash -c 'cd /mnt/c/dev/projects/dotfiles && ./dot stow'"
         } else {
             Write-Info "  Run './dot stow' from within WSL"
         }
@@ -369,6 +377,149 @@ switch ($Command.ToLower()) {
         Write-Info "Or install multiple at once: scoop install app1 app2 app3"
     }
     
+    "validate" {
+        Write-Header "Validating package sync between WSL and Windows"
+        
+        $ScoopFile = Join-Path $DotfilesDir "packages\scoopfile.json"
+        $BundleFile = Join-Path $DotfilesDir "packages\bundle"
+        
+        $issues = 0
+        
+        if (Test-Path $ScoopFile) {
+            $ScoopConfig = Get-Content $ScoopFile | ConvertFrom-Json
+            $scoopApps = $ScoopConfig.apps | ForEach-Object { $_.name }
+        } else {
+            Write-Error-Custom "Scoopfile not found"
+            $issues++
+        }
+        
+        if (Test-Path $BundleFile) {
+            $brewApps = @()
+            Get-Content $BundleFile | ForEach-Object {
+                if ($_ -match 'brew\s+"([^"]+)"') {
+                    $brewApps += $matches[1]
+                }
+            }
+        } else {
+            Write-Error-Custom "Bundle file not found"
+            $issues++
+        }
+        
+        if ($issues -eq 0) {
+            Write-Info "Comparing packages..."
+            Write-Host ""
+            
+            $commonTools = @("git", "gh", "nvim", "fzf", "ripgrep", "fd", "jq", "zoxide", "mise", "lsd", "yazi", "starship", "lazygit", "lazydocker")
+            
+            Write-Info "Checking common tools availability:"
+            foreach ($tool in $commonTools) {
+                $inScoop = $scoopApps -contains $tool
+                $inBrew = $brewApps -contains $tool
+                $installed = Get-Command $tool -ErrorAction SilentlyContinue
+                
+                if ($inScoop -and $inBrew) {
+                    $status = if ($installed) { "installed" } else { "NOT installed" }
+                    Write-Success "$tool - in both manifests ($status)"
+                } elseif ($inScoop -or $inBrew) {
+                    $where = if ($inScoop) { "Scoop only" } else { "Brew only" }
+                    Write-Warning-Custom "$tool - $where"
+                }
+            }
+            
+            Write-Host ""
+            Write-Header "Validation complete"
+        }
+    }
+    
+    "backup" {
+        Write-Header "Backing up current configurations"
+        
+        $backupDir = Join-Path $DotfilesDir "backups\$(Get-Date -Format 'yyyyMMdd_HHmmss')"
+        
+        $configsToBackup = @(
+            @{ Path = "$HOME\.gitconfig"; Name = "gitconfig" },
+            @{ Path = "$HOME\.config\git\config"; Name = "git-config" },
+            @{ Path = "$HOME\AppData\Local\nvim"; Name = "nvim" },
+            @{ Path = "$HOME\Documents\PowerShell\Microsoft.PowerShell_profile.ps1"; Name = "powershell-profile" }
+        )
+        
+        $backedUp = 0
+        foreach ($config in $configsToBackup) {
+            if (Test-Path $config.Path) {
+                if (-not (Test-Path $backupDir)) {
+                    New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
+                }
+                
+                $dest = Join-Path $backupDir $config.Name
+                Write-Info "Backing up $($config.Name)..."
+                
+                try {
+                    if (Test-Path -PathType Leaf $config.Path) {
+                        Copy-Item $config.Path $dest -Force
+                    } else {
+                        Copy-Item $config.Path $dest -Recurse -Force
+                    }
+                    $backedUp++
+                    Write-Success "Backed up $($config.Name)"
+                } catch {
+                    Write-Error-Custom "Failed to backup $($config.Name): $_"
+                }
+            }
+        }
+        
+        if ($backedUp -gt 0) {
+            Write-Header "Backup complete: $backedUp items saved to $backupDir"
+        } else {
+            Write-Info "No existing configs found to backup"
+        }
+    }
+    
+    "edit" {
+        $configPath = if ($Arguments.Count -gt 0) {
+            $config = $Arguments[0].ToLower()
+            switch ($config) {
+                "git" { Join-Path $DotfilesDir "home\.config\git\config" }
+                "nvim" { Join-Path $DotfilesDir "home\.config\nvim\init.lua" }
+                "zsh" { Join-Path $DotfilesDir "home\.config\zsh\.zshrc" }
+                "ps" { Join-Path $DotfilesDir "home\.config\powershell\profile.ps1" }
+                "starship" { Join-Path $DotfilesDir "home\.config\starship.toml" }
+                "tmux" { Join-Path $DotfilesDir "home\.config\tmux\tmux.conf" }
+                "mise" { Join-Path $DotfilesDir "home\.mise.toml" }
+                "aliases" { Join-Path $DotfilesDir "home\.config\zsh\aliases.zsh" }
+                default { 
+                    Write-Error-Custom "Unknown config: $config"
+                    Write-Info "Available: git, nvim, zsh, ps, starship, tmux, mise, aliases"
+                    exit 1
+                }
+            }
+        } else {
+            Write-Info "Available configs to edit:"
+            Write-Host "  git      - Git configuration"
+            Write-Host "  nvim     - Neovim configuration"
+            Write-Host "  zsh      - Zsh configuration"
+            Write-Host "  ps       - PowerShell profile"
+            Write-Host "  starship - Starship prompt"
+            Write-Host "  tmux     - Tmux configuration"
+            Write-Host "  mise     - Mise configuration"
+            Write-Host "  aliases  - Zsh aliases"
+            Write-Host ""
+            Write-Info "Usage: .\dot.ps1 edit <config>"
+            exit 0
+        }
+        
+        if (Test-Path $configPath) {
+            $editor = if (Get-Command nvim -ErrorAction SilentlyContinue) { "nvim" }
+                      elseif (Get-Command code -ErrorAction SilentlyContinue) { "code" }
+                      else { "notepad" }
+            
+            Write-Info "Opening $configPath with $editor..."
+            & $editor $configPath
+        } else {
+            Write-Error-Custom "Config file not found: $configPath"
+            exit 1
+        }
+    }
+    
     "help" {
         Write-Host @"
 
@@ -378,25 +529,30 @@ USAGE:
     .\dot.ps1 <command> [options]
 
 COMMANDS:
-    init      Initialize Windows-side configuration
+    init              Initialize Windows-side configuration
     update            Update dotfiles and Windows packages
     doctor            Run diagnostics for Windows environment
     gui-apps          Show recommended GUI applications
+    validate          Check package sync between WSL and Windows
+    backup            Backup current configurations
+    edit <config>     Open a config file for editing
     help              Show this help message
     
     init              WSL command (run from WSL instead)
     stow              WSL command (run from WSL instead)
 
 WINDOWS COMMANDS:
-    .\dot.ps1 init    # Setup Windows packages and configs
-    .\dot.ps1 update          # Update Scoop packages and PowerShell modules
-    .\dot.ps1 doctor          # Check Windows environment
-    .\dot.ps1 gui-apps        # Show GUI apps recommendations
+    .\dot.ps1 init      # Setup Windows packages and configs
+    .\dot.ps1 update    # Update Scoop packages and PowerShell modules
+    .\dot.ps1 doctor    # Check Windows environment
+    .\dot.ps1 validate  # Check WSL/Windows package sync
+    .\dot.ps1 backup    # Backup current configs
+    .\dot.ps1 edit git  # Edit git config
 
 WSL COMMANDS (run from WSL):
-    ./dot init                # Initialize WSL environment
-    ./dot update              # Update Homebrew and re-stow configs
-    ./dot stow                # Create/update symlinks
+    ./dot init          # Initialize WSL environment
+    ./dot update        # Update Homebrew and re-stow configs
+    ./dot stow          # Create/update symlinks
 
 EXAMPLES:
     # Windows setup
@@ -407,6 +563,9 @@ EXAMPLES:
 
     # Update packages
     .\dot.ps1 update
+
+    # Edit a config file
+    .\dot.ps1 edit nvim
 
     # Run WSL commands from PowerShell
     wsl -e bash -c 'cd /mnt/c/dev/projects/dotfiles && ./dot init'

@@ -55,7 +55,14 @@
 	last = log -1 HEAD
 	lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
 	amend = commit --amend --no-edit
-	
+	lol = log --oneline --graph --decorate
+	d = diff
+	ds = diff --staged
+	fetchall = fetch --all --prune
+	undo = reset --soft HEAD~1
+	redo = reset 'HEAD@{1}'
+	wip = !git add -A && git commit -m 'WIP'
+	nowip = !git reset --soft HEAD~1
 
 [includeIf "gitdir:~/dev/"]
 	path = ~/.config/git/work_config

@@ -7,13 +7,7 @@ export PATH="$HOME/.dotfiles:$PATH"
 export EDITOR="nvim"
 export VISUAL="nvim"
 
-# XDG Base Directory
-export XDG_CONFIG_HOME="$HOME/.config"
-export XDG_DATA_HOME="$HOME/.local/share"
-export XDG_CACHE_HOME="$HOME/.cache"
 
-# Zsh config location
-export ZDOTDIR="$HOME/.config/zsh"
 
 # History configuration
 export HISTFILE="$ZDOTDIR/.zsh_history"

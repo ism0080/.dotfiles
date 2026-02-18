@@ -4,7 +4,7 @@ wsl/windows dev env
 
 ## CONVENTIONS
 
-- Scoop for windows. Hombrew for WSL
+- Scoop for windows. Homebrew for WSL
 
 ## ANTI-PATTERNS
 
