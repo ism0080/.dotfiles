@@ -37,9 +37,13 @@ else
 fi
 
 # Neovim
+alias n="nvim"
 alias v="nvim"
 alias vim="nvim"
 
 # Dotfiles
 alias dots="cd ~/.dotfiles"
 alias dot="~/.dotfiles/dot"
+
+alias lg="lazygit"
+alias ld="lazydocker"

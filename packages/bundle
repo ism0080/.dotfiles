@@ -14,6 +14,8 @@ brew "zoxide"          # Smarter cd command
 
 # Editor and tools
 brew "neovim"
+brew "lazygit"
+brew "lazydocker"
 
 # Search and navigation
 brew "fzf"             # Fuzzy finder
