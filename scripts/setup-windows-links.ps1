@@ -1,34 +1,24 @@
 #!/usr/bin/env pwsh
-# PowerShell script to create Windows symlinks to WSL configs
+# PowerShell script to create Windows symlinks to configs
 # Run as Administrator: .\setup-windows-links.ps1
 
-param(
-    [string]$WslDistro = "Ubuntu"
-)
 
-Write-Host "Setting up Windows symlinks to WSL configs..." -ForegroundColor Cyan
+
+Write-Host "Setting up Windows symlinks to configs..." -ForegroundColor Cyan
 Write-Host ""
 
-# Get WSL home directory
-$wslHome = wsl -d $WslDistro -e bash -c "echo `$HOME" 2>$null
-if (-not $wslHome) {
-    Write-Host "Error: Could not detect WSL home directory" -ForegroundColor Red
-    Write-Host "Make sure WSL is installed and $WslDistro distribution exists" -ForegroundColor Yellow
-    exit 1
-}
 
-$wslHome = $wslHome.Trim()
-$wslPath = "\\wsl$\$WslDistro$wslHome"
-Write-Host "WSL Home: $wslPath" -ForegroundColor Green
-
+$projectDir = "C:\Users\imackle\.dotfiles"
 $windowsHome = $env:USERPROFILE
 
 # Configs to link
 $configsToLink = @(
-    @{Name="Git Config"; Source=".config/git/config"; Target="~/.gitconfig"},
-    @{Name="Neovim"; Source=".config/nvim"; Target="AppData/Local/nvim"},
-    @{Name="Opencode"; Source=".config/opencode"; Target="~/.config/opencode"},
-    @{Name="PowerShell"; Source=".config/powershell/profile.ps1"; Target="Documents/PowerShell/Microsoft.PowerShell_profile.ps1"}
+    # @{Name="Neovim"; Source=".config/nvim"; Target="AppData/Local/nvim"},
+    @{Name="Starship"; Source="home/.config/starship.toml"; Target=".config/starship.toml"},
+    @{Name="Git Config"; Source="home/.config/git/config"; Target=".gitconfig"},
+    @{Name="Opencode"; Source="home/.config/opencode"; Target=".config/opencode"},
+    @{Name="Mise"; Source="home/.config/mise"; Target=".config/mise"},
+    @{Name="PowerShell"; Source="home/.config/powershell"; Target=".config/powershell"}
 )
 
 # Create backup directory
@@ -88,7 +78,7 @@ if ($filesToBackup.Count -gt 0) {
 }
 
 foreach ($config in $configsToLink) {
-    $sourcePath = Join-Path $wslPath $config.Source
+    $sourcePath = Join-Path $projectDir $config.Source
     $targetPath = Join-Path $windowsHome $config.Target
     
     Write-Host ""

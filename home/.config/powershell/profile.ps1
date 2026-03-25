@@ -32,7 +32,7 @@ if (Get-Command zoxide -ErrorAction SilentlyContinue) {
 
 # Mise - Modern runtime version manager (if installed)
 if (Get-Command mise -ErrorAction SilentlyContinue) {
-    Invoke-Expression (& { (mise activate powershell | Out-String) })
+    (&mise activate pwsh) | Out-String | Invoke-Expression
 }
 
 # FZF Integration (if PSFzf module is available)
@@ -43,9 +43,9 @@ if (Get-Module -ListAvailable -Name PSFzf) {
 }
 
 # Fnox - Secrets manager (if installed)
-if (Get-Command fnox -ErrorAction SilentlyContinue) {
-    Invoke-Expression (& { (fnox activate powershell | Out-String) })
-}
+# if (Get-Command fnox -ErrorAction SilentlyContinue) {
+#     Invoke-Expression (& { (fnox activate powershell | Out-String) })
+# }
 
 # Aliases
 # Git
@@ -108,7 +108,7 @@ function dot {
 }
 
 # Common directories
-function dev { Set-Location "C:\dev" }
+function dev { Set-Location "C:\Users\imackle\Dev" }
 function home { Set-Location $HOME }
 function profile { nvim $PROFILE }
 
