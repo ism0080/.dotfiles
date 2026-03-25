@@ -20,6 +20,11 @@
       "comment": "Command line HTTP client"
     },
     {
+      "name": "file",
+      "source": "main",
+      "comment": "File mime type"
+    },
+    {
       "name": "docker",
       "source": "main",
       "comment": "Containerization platform"
