@@ -6,7 +6,6 @@
 [tools]
 node = "lts"           # Latest LTS version
 bun = "latest"
-dotnet = "latest"
 go = "latest"
 fnox = "latest"
 

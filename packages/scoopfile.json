@@ -20,9 +20,19 @@
       "comment": "Command line HTTP client"
     },
     {
-      "name": "file",
+      "name": "ffmpeg",
       "source": "main",
-      "comment": "File mime type"
+      "comment": "ffmpeg"
+    },
+    {
+      "name": "poppler",
+      "source": "main",
+      "comment": "PDF rendering library"
+    },
+    {
+      "name": "ghostscript",
+      "source": "main",
+      "comment": "GhostScript"
     },
     {
       "name": "docker",
@@ -88,6 +98,16 @@
       "name": "neovim",
       "source": "main",
       "comment": "Modern vim-based editor"
+    },
+    {
+      "name": "resvg",
+      "source": "main",
+      "comment": "ReSVG"
+    },
+    {
+      "name": "imagemagick",
+      "source": "main",
+      "comment": "imagemagick"
     },
     {
       "name": "pnpm",
@@ -170,11 +190,6 @@
       "name": "openapi-generator-cli",
       "source": "main",
       "comment": "OpenAPI code generator"
-    },
-    {
-      "name": "poppler",
-      "source": "main",
-      "comment": "PDF rendering library"
     },
     {
       "name": "saml2aws",

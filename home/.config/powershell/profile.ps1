@@ -15,8 +15,15 @@ if (Get-Module -ListAvailable -Name PSReadLine) {
     Set-PSReadLineOption -PredictionSource History
     Set-PSReadLineOption -PredictionViewStyle ListView
     Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete
-    Set-PSReadLineKeyHandler -Key UpArrow -Function HistorySearchBackward
-    Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
+    Set-PSReadLineKeyHandler -Key UpArrow -ScriptBlock {
+    [Microsoft.PowerShell.PSConsoleReadLine]::HistorySearchBackward()
+    [Microsoft.PowerShell.PSConsoleReadLine]::EndOfLine()
+    }
+
+    Set-PSReadLineKeyHandler -Key DownArrow -ScriptBlock {
+    [Microsoft.PowerShell.PSConsoleReadLine]::HistorySearchForward()
+    [Microsoft.PowerShell.PSConsoleReadLine]::EndOfLine()
+    }
 }
 
 # Starship prompt (if installed)
@@ -108,7 +115,7 @@ function dot {
 }
 
 # Common directories
-function dev { Set-Location "C:\Users\imackle\Dev" }
+function dev { Set-Location "D:\Dev" }
 function home { Set-Location $HOME }
 function profile { nvim $PROFILE }
 
