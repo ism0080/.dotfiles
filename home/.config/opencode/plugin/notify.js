@@ -3,10 +3,6 @@ import { join } from 'path';
 import { readFileSync } from 'fs';
 
 export const NotificationPlugin = async ({ $, client }) => {
-    const iconPath = join(
-        homedir(),
-        '.config/opencode/images/opencode-logo-light.png'
-    );
 
     // Detect if running in WSL
     const isWSL = () => {
@@ -37,14 +33,14 @@ export const NotificationPlugin = async ({ $, client }) => {
                 await $`wsl-notify-send.exe --category "OpenCode" --app-id "OpenCode" "${title}" "${message}"`;
             } else {
                 // Fallback to notify-send if available
-                await $`notify-send ${title} ${message} -i ${iconPath}`;
+                await $`notify-send ${title} ${message}`;
             }
         } else if (platform() === 'win32') {
             // Use PowerShell BurntToast on Windows
-            await $`pwsh -NoProfile -Command "New-BurntToastNotification -Text '${title}','${message}' -AppLogo '${iconPath}'"`;
+            await $`pwsh -NoProfile -Command "New-BurntToastNotification -Text '${title}','${message}'"`;
         } else {
             // Use notify-send on other Linux/Unix systems
-            await $`notify-send ${title} ${message} -i ${iconPath}`;
+            await $`notify-send ${title} ${message}`;
         }
     };
 

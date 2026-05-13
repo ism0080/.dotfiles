@@ -204,18 +204,24 @@ function Reload-Profile {
 Set-Alias -Name reload -Value Reload-Profile
 
 function vs {
-	param (
-		[Parameter(Mandatory = $true)]
-		[ValidateSet('19', '22')]
-		[string]$Version
+	param(
+		[ValidateSet('22', '26')]
+		[string]$Version = '26'
 	)
-	$2022 = "C:\Program Files\Microsoft Visual Studio\2022\Professional\Common7\IDE\devenv.exe"
-	$2019 = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\Common7\IDE\devenv.exe"
-	$slnPath = Get-ChildItem -Filter *.sln | Select-Object -ExpandProperty FullName
-	if ($Version -eq '22') {
-		& $2022 $slnPath
-	} elseif ($Version -eq '19') {
-		& $2019 $slnPath
+
+	$exe = if ($Version -eq '22') {
+		"C:\Program Files\Microsoft Visual Studio\2022\Professional\Common7\IDE\devenv.exe"
+	} else {
+		"C:\Program Files\Microsoft Visual Studio\18\Professional\Common7\IDE\devenv.exe"
+	}
+
+	$slnPath = Get-ChildItem -Filter *.sln |
+		Select-Object -First 1 -ExpandProperty FullName
+
+	if ($slnPath) {
+		Start-Process -FilePath $exe -ArgumentList "`"$slnPath`"" -Verb RunAs
+	} else {
+		Write-Error "No .sln file found in the current directory."
 	}
 }
 
@@ -237,8 +243,6 @@ if (Test-Path $LocalProfile) {
     . $LocalProfile
 }
 
-# Welcome message
-Write-Host "PowerShell $($PSVersionTable.PSVersion) on $($PSVersionTable.OS)" -ForegroundColor Cyan
-if (Get-Command starship -ErrorAction SilentlyContinue) {
-    Write-Host "✓ Starship prompt loaded" -ForegroundColor Green
-}
+# Applications
+Set-Alias aquira aquira-cli.exe
+Set-Alias aquira-cloud aquira-cloud-cli.exe

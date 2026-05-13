@@ -200,6 +200,11 @@
       "name": "mongodb-compass",
       "source": "extras",
       "comment": "An interactive tool for querying, optimizing, and analyzing MongoDB data"
+    },
+    {
+      "name": "aws",
+      "source": "main",
+      "comment": "AWS CLI"
     }
   ]
 }
