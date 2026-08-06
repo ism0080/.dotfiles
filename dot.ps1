@@ -33,7 +33,7 @@
 param(
     [Parameter(Position = 0)]
     [string]$Command = "help",
-    
+
     [Parameter(Position = 1, ValueFromRemainingArguments = $true)]
     [string[]]$Arguments
 )
@@ -101,7 +101,7 @@ if (-not $IsWindows -and -not $env:OS -match "Windows") {
 switch ($Command.ToLower()) {
     "init" {
         Write-Header "Initializing Windows-side configuration"
-        
+
         # Check if Scoop is installed
         if (-not (Get-Command scoop -ErrorAction SilentlyContinue)) {
             Write-Warning-Custom "Scoop is not installed"
@@ -109,9 +109,9 @@ switch ($Command.ToLower()) {
             Write-Host "  irm get.scoop.sh | iex" -ForegroundColor White
             exit 1
         }
-        
+
         Write-Success "Scoop is installed"
-        
+
         # Run the Windows setup script safely
         $SetupScript = Join-Path $DotfilesDir "scripts\setup-windows.ps1"
 
@@ -126,20 +126,20 @@ switch ($Command.ToLower()) {
         $ScriptFile = (Get-Item $SetupScript).FullName
         & $ScriptFile
 
-        
+
         if ($LASTEXITCODE -eq 0) {
             Write-Header "Windows setup complete! 🎉"
             Write-Info "Packages, modules, and symlinks have been configured"
-            
+
             # Display GUI applications recommendations
             Write-Host ""
             Write-Header "Recommended GUI Applications"
-            
+
             $GuiAppsFile = Join-Path $DotfilesDir "packages\gui-apps.txt"
             if (Test-Path $GuiAppsFile) {
                 Write-Info "Consider installing these GUI applications:"
                 Write-Host ""
-                
+
                 Get-Content $GuiAppsFile | ForEach-Object {
                     $line = $_.Trim()
                     # Skip empty lines and comments
@@ -149,7 +149,7 @@ switch ($Command.ToLower()) {
                             $app = $parts[0].Trim()
                             $description = $parts[1].Trim()
                             $installCmd = $parts[2].Trim()
-                            
+
                             Write-Host "  • " -NoNewline -ForegroundColor Cyan
                             Write-Host "$app" -NoNewline -ForegroundColor Yellow
                             Write-Host " - $description" -ForegroundColor White
@@ -158,7 +158,7 @@ switch ($Command.ToLower()) {
                         }
                     }
                 }
-                
+
                 Write-Host ""
                 Write-Info "To see this list again, run: dot gui-apps"
             } else {
@@ -169,10 +169,10 @@ switch ($Command.ToLower()) {
             exit 1
         }
     }
-    
+
     "update" {
         Write-Header "Updating dotfiles"
-        
+
         # Pull latest changes
         Write-Info "Pulling latest changes..."
         Push-Location $DotfilesDir
@@ -185,7 +185,7 @@ switch ($Command.ToLower()) {
             exit 1
         }
         Pop-Location
-        
+
         # Update Scoop packages
         if (Get-Command scoop -ErrorAction SilentlyContinue) {
             $response = Read-Host "Update Scoop packages? (Y/n)"
@@ -196,7 +196,7 @@ switch ($Command.ToLower()) {
                 Write-Success "Scoop packages updated"
             }
         }
-        
+
         # Update PowerShell modules
         $response = Read-Host "Update PowerShell modules? (Y/n)"
         if ($response -eq "" -or $response -match "^[Yy]") {
@@ -208,33 +208,18 @@ switch ($Command.ToLower()) {
                 Write-Warning-Custom "Some modules failed to update: $_"
             }
         }
-        
-        # Update mise
-        if (Get-Command mise -ErrorAction SilentlyContinue) {
-            $response = Read-Host "Update mise and runtimes? (y/N)"
-            if ($response -match "^[Yy]") {
-                Write-Info "Updating mise..."
-                if (Get-Command scoop -ErrorAction SilentlyContinue) {
-                    scoop update mise
-                }
-                
-                Write-Info "Upgrading mise-managed runtimes..."
-                mise upgrade
-                Write-Success "Mise updated"
-            }
-        }
-        
+
         Write-Info "Note: Re-stowing dotfiles should be done from WSL"
         Write-Info "Run 'dot update' from WSL to update symlinks"
     }
-    
+
     "doctor" {
         Write-Header "Running diagnostics"
         Write-Info "Environment: Windows"
         Write-Info "Dotfiles dir: $DotfilesDir"
-        
+
         $issues = 0
-        
+
         # Check Scoop
         if (Get-Command scoop -ErrorAction SilentlyContinue) {
             Write-Success "Scoop installed"
@@ -245,9 +230,9 @@ switch ($Command.ToLower()) {
             Write-Info "  Install: irm get.scoop.sh | iex"
             $issues++
         }
-        
+
         # Check key tools
-        $tools = @("git", "nvim", "mise", "starship", "docker", "lazydocker", "lazygit", "yazi", "cascadia-code")
+        $tools = @("git", "nvim", "starship", "docker", "lazydocker", "lazygit", "yazi", "cascadia-code")
         foreach ($tool in $tools) {
             if (Get-Command $tool -ErrorAction SilentlyContinue) {
                 Write-Success "$tool is available"
@@ -255,7 +240,7 @@ switch ($Command.ToLower()) {
                 Write-Warning-Custom "$tool not installed (install via Scoop)"
             }
         }
-        
+
         # Check PowerShell modules
         Write-Info "Checking PowerShell modules..."
         $modules = @("PSReadLine", "PSFzf", "Terminal-Icons")
@@ -266,29 +251,12 @@ switch ($Command.ToLower()) {
                 Write-Warning-Custom "$module module not installed"
             }
         }
-        
-        # Check mise installations
-        Write-Info "Checking mise installations..."
-        if (Get-Command mise -ErrorAction SilentlyContinue) {
-            Write-Success "mise is available"
-            $miseVersion = mise --version
-            Write-Info "  Version: $miseVersion"
-            
-            $runtimes = mise list 2>$null
-            if ($runtimes) {
-                Write-Info "  Installed runtimes:"
                 $runtimes | ForEach-Object {
                     if ($_.Trim()) {
                         Write-Info "    $_"
                     }
-                }
-            } else {
-                Write-Info "  No runtimes installed yet (use 'mise install')"
-            }
-        } else {
-            Write-Warning-Custom "mise not installed"
-        }
-        
+
+
         # Summary
         Write-Host ""
         if ($issues -eq 0) {
@@ -298,49 +266,49 @@ switch ($Command.ToLower()) {
             Write-Info "Run 'dot.ps1 init' to fix"
         }
     }
-    
+
     "init" {
         Write-Warning-Custom "The 'init' command should be run from WSL"
         Write-Info "For Windows setup, use: .\dot.ps1 init"
         Write-Info ""
         Write-Info "To run WSL init:"
-        
+
         if (Get-Command wsl -ErrorAction SilentlyContinue) {
             Write-Info "  wsl -d $WSLDistro -e bash -c 'cd /mnt/c/dev/projects/dotfiles && ./dot init'"
         } else {
             Write-Info "  Run './dot init' from within WSL"
         }
     }
-    
+
     "stow" {
         Write-Warning-Custom "The 'stow' command should be run from WSL"
         Write-Info "Stowing (creating symlinks) requires GNU Stow which runs in WSL"
         Write-Info ""
         Write-Info "To run stow:"
-        
+
         if (Get-Command wsl -ErrorAction SilentlyContinue) {
             Write-Info "  wsl -d $WSLDistro -e bash -c 'cd /mnt/c/dev/projects/dotfiles && ./dot stow'"
         } else {
             Write-Info "  Run './dot stow' from within WSL"
         }
     }
-    
+
     "gui-apps" {
         Write-Header "Recommended GUI Applications for Windows"
-        
+
         $GuiAppsFile = Join-Path $DotfilesDir "packages\gui-apps.txt"
         if (-not (Test-Path $GuiAppsFile)) {
             Write-Error-Custom "GUI apps list not found at $GuiAppsFile"
             exit 1
         }
-        
+
         Write-Info "These GUI applications are recommended for a complete setup:"
         Write-Host ""
-        
+
         $currentCategory = ""
         Get-Content $GuiAppsFile | ForEach-Object {
             $line = $_.Trim()
-            
+
             # Handle category headers (comments that start with "# " followed by non-empty text)
             if ($line -match "^# (.+)") {
                 $category = $matches[1]
@@ -362,7 +330,7 @@ switch ($Command.ToLower()) {
                     $app = $parts[0].Trim()
                     $description = $parts[1].Trim()
                     $installCmd = $parts[2].Trim()
-                    
+
                     Write-Host "    • " -NoNewline -ForegroundColor Cyan
                     Write-Host "$app" -NoNewline -ForegroundColor Yellow
                     Write-Host " - $description" -ForegroundColor White
@@ -371,20 +339,20 @@ switch ($Command.ToLower()) {
                 }
             }
         }
-        
+
         Write-Host ""
         Write-Info "Install individual apps as needed using the commands above"
         Write-Info "Or install multiple at once: scoop install app1 app2 app3"
     }
-    
+
     "validate" {
         Write-Header "Validating package sync between WSL and Windows"
-        
+
         $ScoopFile = Join-Path $DotfilesDir "packages\scoopfile.json"
         $BundleFile = Join-Path $DotfilesDir "packages\bundle"
-        
+
         $issues = 0
-        
+
         if (Test-Path $ScoopFile) {
             $ScoopConfig = Get-Content $ScoopFile | ConvertFrom-Json
             $scoopApps = $ScoopConfig.apps | ForEach-Object { $_.name }
@@ -392,7 +360,7 @@ switch ($Command.ToLower()) {
             Write-Error-Custom "Scoopfile not found"
             $issues++
         }
-        
+
         if (Test-Path $BundleFile) {
             $brewApps = @()
             Get-Content $BundleFile | ForEach-Object {
@@ -404,19 +372,19 @@ switch ($Command.ToLower()) {
             Write-Error-Custom "Bundle file not found"
             $issues++
         }
-        
+
         if ($issues -eq 0) {
             Write-Info "Comparing packages..."
             Write-Host ""
-            
-            $commonTools = @("git", "gh", "nvim", "fzf", "ripgrep", "fd", "jq", "zoxide", "mise", "lsd", "yazi", "starship", "lazygit", "lazydocker")
-            
+
+            $commonTools = @("git", "gh", "nvim", "fzf", "ripgrep", "fd", "jq", "zoxide", "lsd", "yazi", "starship", "lazygit", "lazydocker")
+
             Write-Info "Checking common tools availability:"
             foreach ($tool in $commonTools) {
                 $inScoop = $scoopApps -contains $tool
                 $inBrew = $brewApps -contains $tool
                 $installed = Get-Command $tool -ErrorAction SilentlyContinue
-                
+
                 if ($inScoop -and $inBrew) {
                     $status = if ($installed) { "installed" } else { "NOT installed" }
                     Write-Success "$tool - in both manifests ($status)"
@@ -425,34 +393,34 @@ switch ($Command.ToLower()) {
                     Write-Warning-Custom "$tool - $where"
                 }
             }
-            
+
             Write-Host ""
             Write-Header "Validation complete"
         }
     }
-    
+
     "backup" {
         Write-Header "Backing up current configurations"
-        
+
         $backupDir = Join-Path $DotfilesDir "backups\$(Get-Date -Format 'yyyyMMdd_HHmmss')"
-        
+
         $configsToBackup = @(
             @{ Path = "$HOME\.gitconfig"; Name = "gitconfig" },
             @{ Path = "$HOME\.config\git\config"; Name = "git-config" },
             @{ Path = "$HOME\AppData\Local\nvim"; Name = "nvim" },
             @{ Path = "$HOME\Documents\PowerShell\Microsoft.PowerShell_profile.ps1"; Name = "powershell-profile" }
         )
-        
+
         $backedUp = 0
         foreach ($config in $configsToBackup) {
             if (Test-Path $config.Path) {
                 if (-not (Test-Path $backupDir)) {
                     New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
                 }
-                
+
                 $dest = Join-Path $backupDir $config.Name
                 Write-Info "Backing up $($config.Name)..."
-                
+
                 try {
                     if (Test-Path -PathType Leaf $config.Path) {
                         Copy-Item $config.Path $dest -Force
@@ -466,14 +434,14 @@ switch ($Command.ToLower()) {
                 }
             }
         }
-        
+
         if ($backedUp -gt 0) {
             Write-Header "Backup complete: $backedUp items saved to $backupDir"
         } else {
             Write-Info "No existing configs found to backup"
         }
     }
-    
+
     "edit" {
         $configPath = if ($Arguments.Count -gt 0) {
             $config = $Arguments[0].ToLower()
@@ -484,11 +452,10 @@ switch ($Command.ToLower()) {
                 "ps" { Join-Path $DotfilesDir "home\.config\powershell\profile.ps1" }
                 "starship" { Join-Path $DotfilesDir "home\.config\starship.toml" }
                 "tmux" { Join-Path $DotfilesDir "home\.config\tmux\tmux.conf" }
-                "mise" { Join-Path $DotfilesDir "home\.mise.toml" }
                 "aliases" { Join-Path $DotfilesDir "home\.config\zsh\aliases.zsh" }
-                default { 
+                default {
                     Write-Error-Custom "Unknown config: $config"
-                    Write-Info "Available: git, nvim, zsh, ps, starship, tmux, mise, aliases"
+                    Write-Info "Available: git, nvim, zsh, ps, starship, tmux, aliases"
                     exit 1
                 }
             }
@@ -500,18 +467,17 @@ switch ($Command.ToLower()) {
             Write-Host "  ps       - PowerShell profile"
             Write-Host "  starship - Starship prompt"
             Write-Host "  tmux     - Tmux configuration"
-            Write-Host "  mise     - Mise configuration"
             Write-Host "  aliases  - Zsh aliases"
             Write-Host ""
             Write-Info "Usage: .\dot.ps1 edit <config>"
             exit 0
         }
-        
+
         if (Test-Path $configPath) {
             $editor = if (Get-Command nvim -ErrorAction SilentlyContinue) { "nvim" }
                       elseif (Get-Command code -ErrorAction SilentlyContinue) { "code" }
                       else { "notepad" }
-            
+
             Write-Info "Opening $configPath with $editor..."
             & $editor $configPath
         } else {
@@ -519,7 +485,7 @@ switch ($Command.ToLower()) {
             exit 1
         }
     }
-    
+
     "help" {
         Write-Host @"
 
@@ -537,7 +503,7 @@ COMMANDS:
     backup            Backup current configurations
     edit <config>     Open a config file for editing
     help              Show this help message
-    
+
     init              WSL command (run from WSL instead)
     stow              WSL command (run from WSL instead)
 
@@ -574,7 +540,7 @@ For more information, see README.md
 
 "@ -ForegroundColor White
     }
-    
+
     default {
         Write-Error-Custom "Unknown command: $Command"
         Write-Info "Run '.\dot.ps1 help' for usage information"

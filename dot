@@ -72,15 +72,15 @@ command_exists() {
 confirm() {
     local prompt="${1:-Continue?}"
     local default="${2:-n}"
-    
+
     if [[ "$default" == "y" ]]; then
         prompt="$prompt [Y/n]: "
     else
         prompt="$prompt [y/N]: "
     fi
-    
+
     read -r -p "$prompt" response
-    
+
     case "$response" in
         [yY][eE][sS]|[yY]) return 0 ;;
         [nN][oO]|[nN]) return 1 ;;
@@ -98,26 +98,26 @@ confirm() {
 # Installation functions for WSL
 install_homebrew_wsl() {
     print_step "Installing Homebrew (WSL)"
-    
+
     if command_exists brew; then
         print_success "Homebrew is already installed"
         return 0
     fi
-    
+
     print_info "Installing Homebrew..."
-    
+
     if NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"; then
         print_success "Homebrew installed successfully"
-        
+
         # Configure Homebrew environment
         print_info "Configuring Homebrew environment..."
-        
+
         # Add to .profile for future sessions
         echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> ~/.profile
-        
+
         # Load for current session
         eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-        
+
         print_success "Homebrew environment configured"
     else
         print_error "Homebrew installation failed"
@@ -127,35 +127,35 @@ install_homebrew_wsl() {
 
 install_scoop_windows() {
     print_step "Installing Scoop (Windows)"
-    
+
     if command_exists scoop; then
         print_success "Scoop is already installed"
         return 0
     fi
-    
+
     print_info "Installing Scoop..."
     print_warning "This requires PowerShell - please install manually if this fails"
     print_info "Run in PowerShell: irm get.scoop.sh | iex"
-    
+
     return 0
 }
 
 install_packages_wsl() {
     print_step "Installing packages from Brewfile (WSL)"
-    
+
     if [[ ! -f "${PACKAGES_DIR}/bundle" ]]; then
         print_error "Brewfile not found at ${PACKAGES_DIR}/bundle"
         return 1
     fi
-    
+
     print_info "Installing base packages..."
-    
+
     if brew bundle --file="${PACKAGES_DIR}/bundle"; then
         print_success "All packages installed successfully"
     else
         print_warning "Some packages failed to install"
     fi
-    
+
     # Work packages
     if [[ -f "${PACKAGES_DIR}/bundle.work" ]] && confirm "Install work-specific packages?" "n"; then
         print_info "Installing work packages..."
@@ -165,21 +165,21 @@ install_packages_wsl() {
 
 install_wsl_notify_send() {
     print_step "Installing wsl-notify-send (WSL notifications)"
-    
+
     # Check if already installed
     if command_exists wsl-notify-send.exe; then
         print_success "wsl-notify-send is already installed"
         return 0
     fi
-    
+
     print_info "Installing wsl-notify-send for Windows notifications..."
-    
+
     local install_script="${SCRIPTS_DIR}/install-wsl-notify-send.sh"
     if [[ ! -f "$install_script" ]]; then
         print_error "Install script not found: $install_script"
         return 1
     fi
-    
+
     if bash "$install_script"; then
         print_success "wsl-notify-send installed successfully"
     else
@@ -190,26 +190,26 @@ install_wsl_notify_send() {
 
 install_packages_windows() {
     print_step "Installing packages via Scoop (Windows)"
-    
+
     if [[ ! -f "${PACKAGES_DIR}/scoopfile.json" ]]; then
         print_warning "Scoopfile not found at ${PACKAGES_DIR}/scoopfile.json"
         print_info "Create scoopfile.json to manage Windows packages"
         return 0
     fi
-    
+
     print_info "Please install Scoop packages manually using the scoopfile.json"
     print_info "See README for instructions"
 }
 
 symlink_configs() {
     print_step "Creating symlinks for configuration files"
-    
+
     if ! command_exists stow; then
         print_error "GNU Stow is not installed"
         print_info "Install it first: brew install stow"
         return 1
     fi
-    
+
     local target_home
     if [[ "$ENVIRONMENT" == "wsl" ]]; then
         target_home="$HOME"
@@ -217,28 +217,28 @@ symlink_configs() {
         # For Windows, might need different logic
         target_home="$HOME"
     fi
-    
+
     print_info "Stowing files from ${HOME_DIR} to ${target_home}..."
-    
+
     # Create backup directory for existing configs
     local backup_dir
     backup_dir="${DOTFILES_DIR}/backups/$(date +%Y%m%d_%H%M%S)"
     local files_to_backup=()
-    
+
     # Check for existing files that would be overwritten
     while IFS= read -r -d '' file; do
         local relative_path="${file#"${HOME_DIR}"/}"
         local target_path="${target_home}/${relative_path}"
-        
+
         if [[ -e "$target_path" && ! -L "$target_path" ]]; then
             files_to_backup+=("$relative_path")
         fi
     done < <(find "${HOME_DIR}" -type f -print0)
-    
+
     if [[ ${#files_to_backup[@]} -gt 0 ]]; then
         print_warning "The following files will be replaced:"
         printf "  %s\n" "${files_to_backup[@]}"
-        
+
         if confirm "Create backups of existing files?" "y"; then
             mkdir -p "$backup_dir"
             for file in "${files_to_backup[@]}"; do
@@ -253,14 +253,14 @@ symlink_configs() {
             print_success "Backups created in ${backup_dir}"
         fi
     fi
-    
+
     if stow -R -v -d "${DOTFILES_DIR}" -t "${target_home}" home; then
         print_success "Dotfiles stowed successfully"
     else
         print_error "Failed to stow dotfiles"
         return 1
     fi
-    
+
     # # Special handling for configs that need to be accessible from both WSL and Windows
     # if [[ "$ENVIRONMENT" == "wsl" ]]; then
     #     # setup_windows_symlinks
@@ -269,28 +269,28 @@ symlink_configs() {
 
 setup_windows_symlinks() {
     print_info "Setting up Windows-accessible config symlinks..."
-    
+
     # Get Windows home directory
     local win_home
     win_home=$(wslpath "$(cmd.exe /c "echo %USERPROFILE%" 2>/dev/null | tr -d '\r')")
-    
+
     if [[ -z "$win_home" ]]; then
         print_warning "Could not determine Windows home directory"
         return 0
     fi
-    
+
     print_info "Windows home: $win_home"
-    
+
     # Create symlinks for shared configs (git, neovim)
     local configs_to_share=("git" "nvim")
-    
+
     for config in "${configs_to_share[@]}"; do
         local wsl_config="${HOME}/.config/${config}"
         local win_config="${win_home}/.config/${config}"
-        
+
         if [[ -d "$wsl_config" ]]; then
             mkdir -p "$(dirname "$win_config")"
-            
+
             # Check if Windows symlink already exists
             if [[ -L "$win_config" ]] || [[ -e "$win_config" ]]; then
                 print_info "Windows ${config} config already exists"
@@ -307,21 +307,21 @@ setup_windows_symlinks() {
 
 setup_zsh_shell() {
     print_step "Setting up Zsh shell"
-    
+
     if ! command_exists zsh; then
         print_warning "Zsh shell not installed, skipping setup"
         return 0
     fi
-    
+
     local zsh_path
     zsh_path=$(command -v zsh)
-    
+
     # Add zsh to /etc/shells if needed
     if ! grep -q "$zsh_path" /etc/shells 2>/dev/null; then
         print_info "Adding Zsh to /etc/shells..."
         echo "$zsh_path" | sudo tee -a /etc/shells >/dev/null
     fi
-    
+
     # Set zsh as default shell
     # if [[ "$SHELL" != "$zsh_path" ]]; then
     #     print_info "Setting Zsh as default shell..."
@@ -339,7 +339,7 @@ setup_zsh_shell() {
 cmd_init() {
     print_header "Initializing dotfiles for WSL environment"
     print_info "Environment: ${ENVIRONMENT}"
-    
+
     if [[ "$ENVIRONMENT" != "wsl" ]]; then
         print_error "This command must be run from WSL"
         print_info "For Windows setup, use PowerShell:"
@@ -347,16 +347,16 @@ cmd_init() {
         print_info "  .\\dot.ps1 init-windows"
         return 1
     fi
-    
+
     TOTAL_STEPS=6
     CURRENT_STEP=0
-    
+
     install_homebrew_wsl || return 1
     install_packages_wsl || return 1
     install_wsl_notify_send || print_warning "wsl-notify-send installation failed (continuing)"
     symlink_configs || return 1
     setup_zsh_shell || print_warning "Zsh setup failed (continuing)"
-    
+
     print_header "WSL setup complete! 🎉"
     print_info "Next steps:"
     print_info "1. chsh -s $(which zsh) to set Zsh as default shell (if not already)"
@@ -367,7 +367,7 @@ cmd_init() {
 
 cmd_init_windows() {
     print_header "Windows setup should use PowerShell wrapper"
-    
+
     print_warning "This bash command is deprecated"
     print_info "Use the PowerShell wrapper instead:"
     print_info ""
@@ -383,7 +383,7 @@ cmd_init_windows() {
 
 cmd_update() {
     print_header "Updating dotfiles"
-    
+
     if [[ "$ENVIRONMENT" != "wsl" ]]; then
         print_error "This command must be run from WSL"
         print_info "For Windows updates, use PowerShell:"
@@ -391,7 +391,7 @@ cmd_update() {
         print_info "  .\\dot.ps1 update"
         return 1
     fi
-    
+
     # Pull latest changes
     print_info "Pulling latest changes..."
     if git -C "$DOTFILES_DIR" pull; then
@@ -400,33 +400,23 @@ cmd_update() {
         print_error "Failed to update repository"
         return 1
     fi
-    
+
     # Update Homebrew packages
     if confirm "Update Homebrew packages?" "y"; then
         print_info "Updating Homebrew packages..."
         brew update && brew upgrade
         print_success "Homebrew packages updated"
     fi
-    
+
     # Re-symlink dotfiles
     if confirm "Re-stow dotfiles?" "y"; then
         symlink_configs
-    fi
-    
-    # Update mise
-    if command_exists mise && confirm "Update mise and runtimes?" "n"; then
-        print_info "Updating mise..."
-        brew upgrade mise
-        
-        print_info "Upgrading mise-managed runtimes..."
-        mise upgrade || print_warning "Some runtimes failed to upgrade"
-        print_success "Mise updated"
     fi
 }
 
 cmd_doctor() {
     print_header "Running diagnostics"
-    
+
     if [[ "$ENVIRONMENT" != "wsl" ]]; then
         print_error "This command must be run from WSL"
         print_info "For Windows diagnostics, use PowerShell:"
@@ -434,12 +424,12 @@ cmd_doctor() {
         print_info "  .\\dot.ps1 doctor"
         return 1
     fi
-    
+
     print_info "Environment: ${ENVIRONMENT}"
     print_info "Dotfiles dir: ${DOTFILES_DIR}"
-    
+
     local issues=0
-    
+
     # Check Homebrew
     if command_exists brew; then
         print_success "Homebrew installed"
@@ -448,7 +438,7 @@ cmd_doctor() {
         print_error "Homebrew not installed"
         ((++issues))
     fi
-    
+
     # Check Stow
     if command_exists stow; then
         print_success "GNU Stow installed"
@@ -456,9 +446,9 @@ cmd_doctor() {
         print_error "GNU Stow not installed (required for symlinks)"
         ((++issues))
     fi
-    
+
     # Check key tools for WSL
-    local tools=("git" "nvim" "tmux" "zsh" "mise")
+    local tools=("git" "nvim" "tmux" "zsh")
     for tool in "${tools[@]}"; do
         if command_exists "$tool"; then
             print_success "$tool is available"
@@ -466,42 +456,24 @@ cmd_doctor() {
             print_warning "$tool not installed"
         fi
     done
-    
+
     # Check config files
     if [[ -f "${HOME}/.config/git/config" ]] || [[ -L "${HOME}/.config/git/config" ]]; then
         print_success "Git config linked"
     else
         print_warning "Git config not linked (run 'dot stow')"
     fi
-    
+
     # Check if zsh is default shell
     if [[ "$SHELL" == *"zsh"* ]]; then
         print_success "Zsh is default shell"
     else
         print_warning "Zsh is not default shell"
     fi
-    
-    # Check mise installations
-    print_info "Checking mise installations..."
-    if command_exists mise; then
-        print_success "mise is available"
-        print_info "  Version: $(mise --version 2>/dev/null)"
-        
-        # Check installed runtimes
-        local runtimes
-        runtimes=$(mise list 2>/dev/null)
-        if [[ -n "$runtimes" ]]; then
-            print_info "  Installed runtimes:"
             echo "$runtimes" | while read -r line; do
                 [[ -n "$line" ]] && print_info "    $line"
-            done
-        else
-            print_info "  No runtimes installed yet (use 'mise install')"
-        fi
-    else
-        print_warning "mise not installed"
-    fi
-    
+
+
     # Summary
     echo ""
     if [[ $issues -eq 0 ]]; then
@@ -518,35 +490,35 @@ cmd_stow() {
 
 cmd_validate() {
     print_header "Validating package sync between WSL and Windows"
-    
+
     local bundle_file="${PACKAGES_DIR}/bundle"
     local scoop_file="${PACKAGES_DIR}/scoopfile.json"
     local issues=0
-    
+
     if [[ ! -f "$bundle_file" ]]; then
         print_error "Bundle file not found at $bundle_file"
         ((++issues))
     fi
-    
+
     if [[ ! -f "$scoop_file" ]]; then
         print_error "Scoopfile not found at $scoop_file"
         ((++issues))
     fi
-    
+
     if [[ $issues -eq 0 ]]; then
         print_info "Comparing packages..."
         echo ""
-        
+
         local brew_apps=()
         while IFS= read -r line; do
             if [[ "$line" =~ brew[[:space:]]+\"([^\"]+)\" ]]; then
                 brew_apps+=("${BASH_REMATCH[1]}")
             fi
         done < "$bundle_file"
-        
+
         print_info "Checking common tools availability:"
-        local common_tools=("git" "gh" "nvim" "fzf" "ripgrep" "fd" "jq" "zoxide" "mise" "lsd" "yazi" "starship" "lazygit" "lazydocker")
-        
+        local common_tools=("git" "gh" "nvim" "fzf" "ripgrep" "fd" "jq" "zoxide" "lsd" "yazi" "starship" "lazygit" "lazydocker")
+
         for tool in "${common_tools[@]}"; do
             local in_brew=false
             for brew_app in "${brew_apps[@]}"; do
@@ -555,14 +527,14 @@ cmd_validate() {
                     break
                 fi
             done
-            
+
             if command_exists "$tool"; then
                 print_success "$tool - installed"
             else
                 print_warning "$tool - not installed"
             fi
         done
-        
+
         echo ""
         print_header "Validation complete"
     fi
@@ -570,10 +542,10 @@ cmd_validate() {
 
 cmd_backup() {
     print_header "Backing up current configurations"
-    
+
     local backup_dir="${DOTFILES_DIR}/backups/$(date +%Y%m%d_%H%M%S)"
     local backed_up=0
-    
+
     local configs_to_backup=(
         "$HOME/.gitconfig"
         "$HOME/.config/git/config"
@@ -582,16 +554,16 @@ cmd_backup() {
         "$HOME/.config/tmux/tmux.conf"
         "$HOME/.config/starship.toml"
     )
-    
+
     for config in "${configs_to_backup[@]}"; do
         if [[ -e "$config" ]]; then
             if [[ ! -d "$backup_dir" ]]; then
                 mkdir -p "$backup_dir"
             fi
-            
+
             local name=$(basename "$config")
             print_info "Backing up $name..."
-            
+
             if cp -r "$config" "${backup_dir}/${name}" 2>/dev/null; then
                 ((++backed_up))
                 print_success "Backed up $name"
@@ -600,7 +572,7 @@ cmd_backup() {
             fi
         fi
     done
-    
+
     if [[ $backed_up -gt 0 ]]; then
         print_header "Backup complete: $backed_up items saved to $backup_dir"
     else
@@ -610,7 +582,7 @@ cmd_backup() {
 
 cmd_edit() {
     local config="${1:-}"
-    
+
     if [[ -z "$config" ]]; then
         print_info "Available configs to edit:"
         echo "  git      - Git configuration"
@@ -624,7 +596,7 @@ cmd_edit() {
         print_info "Usage: dot edit <config>"
         return 0
     fi
-    
+
     local config_path=""
     case "${config,,}" in
         git)     config_path="${HOME_DIR}/.config/git/config" ;;
@@ -633,14 +605,13 @@ cmd_edit() {
         aliases) config_path="${HOME_DIR}/.config/zsh/aliases.zsh" ;;
         starship) config_path="${HOME_DIR}/.config/starship.toml" ;;
         tmux)    config_path="${HOME_DIR}/.config/tmux/tmux.conf" ;;
-        mise)    config_path="${HOME_DIR}/.mise.toml" ;;
         *)
             print_error "Unknown config: $config"
-            print_info "Available: git, nvim, zsh, aliases, starship, tmux, mise"
+            print_info "Available: git, nvim, zsh, aliases, starship, tmux"
             return 1
             ;;
     esac
-    
+
     if [[ -f "$config_path" ]]; then
         local editor="${EDITOR:-nvim}"
         print_info "Opening $config_path with $editor..."
@@ -667,12 +638,12 @@ ${BOLD}COMMANDS (WSL):${RESET}
     backup            Backup current configurations
     edit <config>     Open a config file for editing
     help              Show this help message
-    
+
     init-windows      Show Windows setup instructions
 
 ${BOLD}WINDOWS COMMANDS:${RESET}
     For Windows, use the PowerShell wrapper instead:
-    
+
     cd C:\\dev\\projects\\dotfiles
     .\\dot.ps1 init              # Setup Windows packages and configs
     .\\dot.ps1 update            # Update Scoop and PowerShell modules
@@ -702,10 +673,10 @@ main() {
         cmd_help
         return 0
     fi
-    
+
     local command="$1"
     shift
-    
+
     case "$command" in
         init)
             cmd_init "$@"

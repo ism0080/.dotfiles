@@ -43,11 +43,6 @@ if command -v zoxide &> /dev/null; then
     eval "$(zoxide init zsh)"
 fi
 
-# # Mise - Modern runtime version manager (if installed)
-if command -v mise &> /dev/null; then
-    eval "$(mise hook-env -s zsh)"
-fi
-
 # # fnox - Secrets manager
 if command -v fnox &> /dev/null; then
     eval "$(fnox activate zsh)"

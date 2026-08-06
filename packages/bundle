@@ -37,7 +37,6 @@ brew "ffmpeg"
 brew "resvg"
 
 # Language version manager
-brew "mise"            # Modern runtime version manager (replaces fnm, nvm, rbenv, pyenv, etc.)
 
 # Code quality
 brew "shellcheck"      # Shell script linter

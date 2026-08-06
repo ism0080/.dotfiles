@@ -32,14 +32,15 @@ if (Get-Command starship -ErrorAction SilentlyContinue) {
     Invoke-Expression (&starship init powershell)
 }
 
+# FNM (if installed)
+if (Get-Command fnm -ErrorAction SilentlyContinue) {
+    fnm env --use-on-cd | Out-String | Invoke-Expression
+}
+
 # Zoxide (if installed)
 if (Get-Command zoxide -ErrorAction SilentlyContinue) {
     Invoke-Expression (& { (zoxide init powershell | Out-String) })
-}
-
-# Mise - Modern runtime version manager (if installed)
-if (Get-Command mise -ErrorAction SilentlyContinue) {
-    (&mise activate pwsh) | Out-String | Invoke-Expression
+    Set-Alias nvm fnm
 }
 
 # FZF Integration (if PSFzf module is available)
@@ -246,3 +247,5 @@ if (Test-Path $LocalProfile) {
 # Applications
 Set-Alias aquira aquira-cli.exe
 Set-Alias aquira-cloud aquira-cloud-cli.exe
+
+function Restart-BGInfo { Start-Process 'C:\Data\SysInternals\Bginfo.exe' -ArgumentList '/timer:0', '/silent' }

@@ -302,28 +302,10 @@ return {
     -- plugin configuration
   end,
 }
-```
 
-### Runtime Version Management with Mise
-
-This setup uses [mise](https://mise.jdx.dev/) for managing language runtimes (Node.js, Python, Ruby, etc.).
-
-**Global configuration:** `~/.mise.toml` (symlinked from dotfiles)
-```toml
-[tools]
 node = "lts"  # Use Node.js LTS by default
 ```
 
-**Common commands:**
-```bash
-mise install node@20      # Install Node 20
-mise use node@20          # Use Node 20 in current directory
-mise use -g python@3.12   # Set Python 3.12 globally
-mise use -g bun@latest    # Install Bun globally
-mise current              # Show active versions
-```
-
-See [MISE.md](MISE.md) for complete documentation.
 
 ### Shared Configs Between WSL and Windows
 

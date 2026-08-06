@@ -17,7 +17,6 @@ $configsToLink = @(
     @{Name="Starship"; Source="home/.config/starship.toml"; Target=".config/starship.toml"},
     @{Name="Git Config"; Source="home/.config/git/config"; Target=".gitconfig"},
     @{Name="Opencode"; Source="home/.config/opencode"; Target=".config/opencode"},
-    @{Name="Mise"; Source="home/.config/mise"; Target=".config/mise"},
     @{Name="PowerShell"; Source="home/.config/powershell"; Target=".config/powershell"}
 )
 
@@ -29,7 +28,7 @@ $filesToBackup = @()
 # First pass: check for conflicts
 foreach ($config in $configsToLink) {
     $targetPath = Join-Path $windowsHome $config.Target
-    
+
     if (Test-Path $targetPath) {
         $item = Get-Item $targetPath
         if ($item.LinkType -ne "SymbolicLink") {
@@ -49,20 +48,20 @@ if ($filesToBackup.Count -gt 0) {
         Write-Host "  $($item.TargetPath)" -ForegroundColor Gray
     }
     Write-Host ""
-    
+
     $response = Read-Host "Create backups of existing files? [Y/n]"
     if ($response -eq "" -or $response -match "^[Yy]") {
         New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
-        
+
         foreach ($item in $filesToBackup) {
             $relativePath = $item.Config.Target -replace "^~/", ""
             $backupPath = Join-Path $backupDir $relativePath
             $backupParent = Split-Path $backupPath -Parent
-            
+
             if ($backupParent -and -not (Test-Path $backupParent)) {
                 New-Item -ItemType Directory -Path $backupParent -Force | Out-Null
             }
-            
+
             try {
                 Copy-Item -Path $item.TargetPath -Destination $backupPath -Recurse -Force
                 Write-Host "  ✓ Backed up: $($item.Config.Name)" -ForegroundColor Green
@@ -71,7 +70,7 @@ if ($filesToBackup.Count -gt 0) {
                 exit 1
             }
         }
-        
+
         Write-Host ""
         Write-Host "✓ Backups created in: $backupDir" -ForegroundColor Green
     }
@@ -80,18 +79,18 @@ if ($filesToBackup.Count -gt 0) {
 foreach ($config in $configsToLink) {
     $sourcePath = Join-Path $projectDir $config.Source
     $targetPath = Join-Path $windowsHome $config.Target
-    
+
     Write-Host ""
     Write-Host "Processing $($config.Name)..." -ForegroundColor Yellow
     Write-Host "  Source: $sourcePath"
     Write-Host "  Target: $targetPath"
-    
+
     # Check if source exists
     if (-not (Test-Path $sourcePath)) {
         Write-Host "  ⚠ Source not found, skipping" -ForegroundColor Yellow
         continue
     }
-    
+
     # Check if target already exists
     if (Test-Path $targetPath) {
         if ((Get-Item $targetPath).LinkType -eq "SymbolicLink") {
@@ -103,14 +102,14 @@ foreach ($config in $configsToLink) {
             Write-Host "  ✓ Removed existing file/directory" -ForegroundColor Green
         }
     }
-    
+
     # Create parent directory if needed
     $targetParent = Split-Path $targetPath -Parent
     if (-not (Test-Path $targetParent)) {
         New-Item -ItemType Directory -Path $targetParent -Force | Out-Null
         Write-Host "  ✓ Created parent directory" -ForegroundColor Green
     }
-    
+
     # Create symlink (requires admin)
     try {
         New-Item -ItemType SymbolicLink -Path $targetPath -Target $sourcePath -Force | Out-Null

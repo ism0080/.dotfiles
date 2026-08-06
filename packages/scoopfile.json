@@ -2,12 +2,7 @@
   "description": "Scoop packages for Windows side of WSL/Windows setup",
   "comment": "Install with: scoop import scoopfile.json or scoop install <package>",
   "note": "Git, PowerShell Core, and Starship can be installed via Scoop or official installers",
-  "buckets": [
-    "main",
-    "extras",
-    "java",
-    "nerd-fonts"
-  ],
+  "buckets": ["main", "extras", "java", "nerd-fonts"],
   "apps": [
     {
       "name": "7zip",
@@ -18,6 +13,11 @@
       "name": "curl",
       "source": "main",
       "comment": "Command line HTTP client"
+    },
+    {
+      "name": "fnm",
+      "source": "main",
+      "comment": "Fast Node.js version manager"
     },
     {
       "name": "ffmpeg",
@@ -90,11 +90,6 @@
       "comment": "Lua LSP for Neovim"
     },
     {
-      "name": "mise",
-      "source": "main",
-      "comment": "Modern runtime version manager (replaces nvm, rbenv, pyenv, etc.)"
-    },
-    {
       "name": "neovim",
       "source": "main",
       "comment": "Modern vim-based editor"
@@ -118,11 +113,6 @@
       "name": "ripgrep",
       "source": "main",
       "comment": "Fast grep alternative"
-    },
-    {
-      "name": "typos",
-      "source": "main",
-      "comment": "Spell checker for code"
     },
     {
       "name": "yazi",
