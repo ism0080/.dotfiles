@@ -16,8 +16,10 @@ $configsToLink = @(
     # @{Name="Neovim"; Source=".config/nvim"; Target="AppData/Local/nvim"},
     @{Name="Starship"; Source="home/.config/starship.toml"; Target=".config/starship.toml"},
     @{Name="Git Config"; Source="home/.config/git/config"; Target=".gitconfig"},
+    @{Name="Git Config Directory"; Source="home/.config/git"; Target=".config/git"},
     @{Name="Opencode"; Source="home/.config/opencode"; Target=".config/opencode"},
     @{Name="PowerShell"; Source="home/.config/powershell"; Target=".config/powershell"}
+    @{Name="Agents Skills"; Source="home/.agents"; Target=".agents"}
 )
 
 # Create backup directory
